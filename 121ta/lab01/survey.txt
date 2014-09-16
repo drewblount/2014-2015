@@ -1,0 +1,34 @@
+MATH 121 Survey
+
+Name:
+Login name:
+Year (Fr/So/Jr/Sr/other):
+Lecture section (12,1:10pm):
+Lab section (9,10,11am):
+Major or academic interests:
+
+
+Where are you from?
+
+
+Why are you taking this course?  
+
+
+Have you...
+...programmed before? In what programming language(s)?
+
+
+...taken a computer science or programming course?  Where?
+
+
+...used a Unix-based system and worked within the Unix shell (the Terminal)?
+
+
+...proven a mathematical statement?  Using mathematical induction?
+
+
+Do you plan to use your own computer for this course?  
+If it's a laptop, do you plan on bringing it to the lab?
+
+
+Anything else you'd like to let me know related to this course?
