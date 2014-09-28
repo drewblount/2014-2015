@@ -3,13 +3,13 @@
 
 from math import exp
 from numpy import matrix
-
+from random import random
 
 
 
 ## xs is a vector of the input values which have been evaluated already
 ## by the black box function, and ys is the vector of corresponding outputs.
-## qs and ps are regression terms--θs and ps from Jones Eq(1)
+## qs and ps are regression terms--thetas and ps from Jones Eq(1)
 ## returns the DACE predictor function as defined in Jones etc Eq (7)
 def dace_predictor(xs, ys, qs, ps):
     
@@ -38,13 +38,12 @@ def dace_predictor(xs, ys, qs, ps):
     return pred_func
     
 
-
-## Jones Eq(1)--takes vectors of regressors qs (θs in Jones) and ps,
+## Jones Eq(1)--takes vectors of regressors qs (thetas in Jones) and ps,
 ## and returns a distance function for input vectors
 def ego_dist(qs, ps):
     def dist_func(x1, x2):
-        diff = [abs(x1 - x2)
-        return sum( qs[i] * [ abs( x1[i]-x2[i] ) ** ps[i] ] )
+        diff = [ abs( x1[i] - x2[i] ) for i in range( len(x1) ) ]
+        return sum( [ qs[i] * (diff[i] ** ps[i]) for i in range( len(qs) ) ] )
     return dist_func
     
 ## Jones Eq(2)--takes vectors of regression terms, returns a
