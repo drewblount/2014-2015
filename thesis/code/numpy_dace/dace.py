@@ -3,6 +3,7 @@
 
 from math import exp
 from numpy import matrix
+from scipy import linalg
 from random import random
 import scipy.optimize as op
 
@@ -12,6 +13,7 @@ import scipy.optimize as op
 ## by the black box function, and ys is the vector of corresponding outputs.
 ## qs and ps are regression terms--thetas and ps from Jones Eq(1)
 ## returns the DACE predictor function as defined in Jones etc Eq (7)
+## the type of each variable is assumed to
 def dace_predictor(xs, ys, ps, qs):
     
     # include a length check? |xs| = |ys|, and |qs| = |ps| = dim(elt of xs)
