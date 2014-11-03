@@ -118,7 +118,7 @@ def conc_likelihood(xs, ys, ps, qs):
     return lin_term*exp_term
   
 ## for a given xs, ys, finds ps and qs that optimize the above function
-def max_likelihood_params(xs, ys):
+#def max_likelihood_params(xs, ys):
     
     
     
