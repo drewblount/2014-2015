@@ -1,0 +1,87 @@
+
+\documentclass[letterpaper]{article}
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+
+%\usepackage{natbib,alifeconf}
+\usepackage{natbib,amsmath}
+\usepackage[top=1.5in, bottom=1.5in, left=1.25in, right=1.25in]{geometry}
+
+% for the results table
+\usepackage{booktabs}
+\usepackage{multirow,bigstrut}
+\usepackage{tabu}
+
+\usepackage{palatino}
+\usepackage{pxfonts}
+
+
+%% Macros
+\newcommand{\mb}{\mathbf}
+
+%%
+
+
+
+\title{Thesis Working Whitepaper}
+\author{Drew Blount$^{1}$ \\
+\mbox{}\\
+$^1$Mathematics Department, Reed College, Portland, OR 97202 \\
+\\
+dblount@reed.edu}
+
+\begin{document}
+\maketitle
+
+
+\section{Definition}
+Here I'll record the formal definition of the EGO algorithm, especially
+all of the equations involved.
+
+
+\subsection{Likelihood}
+%% The "best linear unbiased predictor"
+The likelihood of a model is given by the equation,
+
+\begin{equation} \label{eq:likelihood}
+\frac{1}
+  {(2\pi\sigma^2)^{n/2}|\mb{R}|^\frac{1}{2}}\ 
+exp \left 
+  [ -\frac
+    {(\mb{y}-\mb{1}\mu)'\mb{R}^{-1}(\mb{y}-\mb{1}\mu)}
+    {2\sigma^2} 
+\right ]
+\end{equation}
+
+
+Where the best estimates of $\mu$, $\sigma^2$ are,
+
+\begin{equation} \label{eq:mu_hat}
+\hat{\mu}=\frac
+	{\mb{1}'\mb{R}^{-1}\mb{y}}
+	{\mb{1}'\mb{R}^{-1}\mb{1}},
+\end{equation}
+
+
+and,
+
+\begin{equation} \label{eq:mu_hat}
+\hat{\sigma}^2=\frac
+	{(\mb{y}-\mb{1}\hat{\mu})'\mb{R}^{-1}(\mb{y}-\mb{1}\hat{\mu})}
+	{n}.
+\end{equation}
+
+\subsection{Predictor}\label{ssec:blup}
+The best linear unbiased predictor of the function's output at $\mb{x^*}$ is,
+
+
+\begin{equation} \label{eq:blup}
+\hat{y}(\mb{x^*})=\hat{\mu} + \mb{r}'\mb{R}^{-1}(\mb{y}-\mb{1}\mu)
+\end{equation}
+
+
+\section{Toy Model}
+Here, I'll apply the algorithm to a very simple case where
+
+
+\end{document}

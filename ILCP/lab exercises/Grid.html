@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<!-- saved from url=(0060)http://people.reed.edu/~miyos/F14/ILCP/Assignments/grid.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>Grid</title>
+<style>
+div {
+  margin: 2px;
+  width:50px;
+  height:50px;
+  background-color: gray;
+  text-align: center;
+  line-height: 50px;
+  color: red;
+  font-size: 200%;
+}
+</style>
+<script src="./Grid_files/jquery-1.10.2.js"></script>
+
+<script>
+
+// toggle box #0
+function button_0(){
+	$('div:first').toggle();
+}
+
+// toggle box #1
+function button_1(){
+  $('div:first + div').toggle();
+}
+
+// toggle box #2, 4, 8
+function button_248(){
+	$('div.secret').slideToggle( "slow" );
+}
+
+// toggle box #5
+function button_5(){
+	$('div#five').toggle();
+}
+
+
+// toggle box #6, 7, 8, 9, 10
+function button_678910(){
+	$('ul').fadeToggle( "slow", "linear" );
+}
+
+
+
+</script>
+</head>
+
+<body>
+<button type="button" onclick="button_0()">0</button>
+<button type="button" onclick="button_1()">1</button>
+<button type="button" onclick="button_248()">2, 4, 8</button>
+<button type="button" onclick="button_5()">5</button>
+<button type="button" onclick="button_678910()">6, 7, 8, 9, 10</button>
+
+<br><br>
+
+
+<div style="float:left;">0</div>
+<div style="float:left;">1 </div>
+<div class="secret" style="float:left;">2</div>
+<div style="float:left;">3</div>
+<div class="secret" style="float:left;">4</div>
+<div id="five" style="float:left;">5</div>
+
+
+<p style="clear:both"></p>
+<br><br>
+<ul>
+ <li> <div>6</div>
+   <ol>
+      <li> <div>a</div> </li>
+      <li> <div>b</div> </li>
+   </ol>
+</li>
+ <li> <div>7</div> </li>
+ <li> <div class="secret">8</div> </li>
+ <li> <div>9</div> </li>
+ <li> <div>10</div> </li>
+ <li> <div>11</div> </li>
+</ul>
+
+
+
+
+
+</body></html>

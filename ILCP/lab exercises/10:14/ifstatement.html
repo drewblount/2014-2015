@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<!-- saved from url=(0067)http://people.reed.edu/~miyos/F14/ILCP/JS_Files/03_ifstatement.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title> The Title of this HTML Page </title>
+
+<script>
+function sliderChange(){
+
+  /* get HTML element with ID 'points' */
+  myPoints = document.getElementById('points');
+
+   /* get the body of this HTML file */
+  myBody = document.getElementsByTagName("body");
+
+  /* get HTML element with the tag <div> */
+  myDiv = document.getElementsByTagName("div");
+
+  /*
+   * use the value of the slider (myPoints object represents the HTML element with the ID 'points') 
+   * to change the background color. Note that myBody is an array since we used document.getElementsByTagName()
+   */
+  myBody[0].style.backgroundColor = "rgb(" + myPoints.value + ", " + myPoints.value + "," + myPoints.value + ")";
+
+  /*
+   * Replace the following line of code with YOUR CODE (hint: if statements here)
+   * 
+   *  if myPoints.value is 0 it is black.
+   *  else if myPoints.value is 255 it is white
+   */
+   var val = myDiv[0].value
+   
+   if (val == 0){
+      myDiv[0].innerHTML='black';
+   }
+   else if (val < 85){
+   		myDiv[0].innerHTML='dark grey';
+   }
+   else if (val < 170){
+   		myDiv[0].innerHTML='grey';
+   }
+   else if (val < 255){
+   		myDiv[0].innerHTML='light grey';
+   }
+   else {
+   		myDiv[0].innerHTML='white';
+   }
+
+    
+
+}
+</script>
+
+</head>
+
+<body style="background-color: rgb(128,128,128);">
+
+<!-- 
+for more on <form>
+see
+http://www.w3schools.com/html/html5_form_input_types.asp 
+-->
+<form>
+<input type="range" id="points" min="0" max="255" onchange="sliderChange();">
+</form>
+
+
+<div style="font-size:500%; color:white;">
+</div>
+
+
+
+</body></html>

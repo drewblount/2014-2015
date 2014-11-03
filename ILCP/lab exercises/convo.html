@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+
+</head>
+
+<body>
+
+
+<script>
+var name = prompt("What is your name?", "Henry Dulcimer Postalwaite III");
+document.write('<p style="font-size:20px"> Hey everyone, ' + name + ' has a stupid, ugly name! <\p>');
+alert(name + " is a beautiful name!");
+var num = prompt("I'm thinking of a number between 1 and 3, what's your guess?");
+if (num == "2") {
+	document.write('<p style="font-size:20px"> I told ' + name + ' they did a good job, but really they suck.');
+	alert("You guessed it, great job.");
+}
+
+else {
+	document.write('<p style="font-size:20px"> ' + name + ' can\'t even perform simple tasks! <\p>');    
+	alert("It was 2, but good guess! You're doing great");
+}
+var secret = prompt("What is your biggest secret?");
+document.write('<p style="font-size:20px"> Hey everyone! ' + name + ' said, \"' + secret +'\"!! What a loser! <\p>');    
+alert("Thanks so much for trusting me with that. What a shocker!");
+
+var i = 0;
+while (i < 1000) {
+	document.write('<p style="font-size:20px"> I hate ' + name + '!!!!! <\p>');
+	alert("I love you, " + name + ".");
+	i++;
+}
+</script>
+
+</body>
+</html>

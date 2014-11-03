@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Creating and Using Arrays</title>
+<script>
+var color = [
+'red',
+'blue',
+'green',
+'cyan',
+'magenta',
+'yellow',
+'black',
+'gray',
+'gold',
+'silver'
+]
+
+var font = [
+'Impact',
+'Times',
+'Papyrus',
+'Lucida Grande',
+'Brush Script MT Bold',
+'Verdana',
+'Big Caslon',
+'Monaco',
+'Arial Rounded MT Bold',
+'Helvetica'
+]
+
+
+</script>
+</head>
+
+<body>
+
+<script>
+var n = prompt("What is your favorite number? (0-9)");
+alert("Then your favirote color must be " + color[n]);
+
+var f_num = prompt("Choose a font number (0-9)");
+/* just to mix things up, I make it so that users
+	 are less likely to figure out the ordering of the font array and
+	 deliberately choose a font that they like
+*/
+f_num = (f_num + n) % 10
+
+/* read textbook p44 putting quotes into strings */
+document.write("<p style=\"font-size:900%; text-align: center; color:"
+ + color[n] + "; font-family:"+ font[f_num]+ 
+ "\">"
+ + color[n] + ", in the beautiful font of " +font[f_num]+ "</p>"); 
+
+/* hint: 
+what you want to generate:
+<p style="font-size:100%; color:blue">blue</p>
+<p style="font-size:100%; color:cyan">cyan</p>
+*/
+</script> 
+
+</body>
+</html>
