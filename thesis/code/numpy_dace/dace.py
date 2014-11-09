@@ -1,45 +1,61 @@
+## This is a copy of dace.py, but using scipy.linalg instead
+## of numpy.matrix. Two reasons for the switch: scipy always
+## uses BLAS, numpy not always, and scipy.linalg makes classes
+## less ambiguous 
+## see: http://docs.scipy.org/doc/scipy-0.14.0/reference/tutorial/linalg.html
+
 ## The goal of this file is to build a minimum working model of the
 ## EGO algorithm as put forth in Jones, Schonlau, Welch 1998
 
-from math import exp
-from numpy import matrix
-from scipy import linalg
+from math import exp, pi
+import numpy as np
+from scipy import linalg as la
 from random import random
 import scipy.optimize as op
-
-
 
 ## xs is a vector of the input values which have been evaluated already
 ## by the black box function, and ys is the vector of corresponding outputs.
 ## qs and ps are regression terms--thetas and ps from Jones Eq(1)
 ## returns the DACE predictor function as defined in Jones etc Eq (7)
 ## the type of each variable is assumed to
-def dace_predictor(xs, ys, ps, qs):
+def dace_predictor(xs, ys, ps, qs, verbose=False):
     
     # include a length check? |xs| = |ys|, and |qs| = |ps| = dim(elt of xs)
     
+    # makes xs, ys are numpy arrays
+    xs, ys = np.array(xs), np.array(ys)
+    
     R = corr_matrix(xs, ps, qs)
-    R_inv = R.I
+    # R is now a numpy array
+    R_inv = la.inv(R)
+    
     # naming vars so they aren't computed more than once -- ys is transposed
     # to change it from a row matrix to a vector
-    R_inv_y = R_inv * matrix(ys).T
-    # note that just calling matrix on a list makes a row matrix, not a vector
-    ones_T = matrix( [ 1 for i in range( len(xs) ) ] )
-    # ones is a vector (column matrix), ones_T is a row matrix
-    ones = ones_T.T
-    ones_T_R_inv = ones_T * R_inv
+    R_inv_y = R_inv.dot(ys)
+    ones = np.array( [[ 1 ]for i in range(len(xs)) ] )
+    # ones is a vector (column matrix)
+    
+    ones_T_R_inv = ones.T.dot(R_inv)
     
     # Regression term -- Jones Eq 5
-    mu_hat = ones_T * R_inv_y / (ones_T_R_inv * ones)
+    mu_hat = ones.T.dot(R_inv_y) / (ones_T_R_inv.dot(ones))
+    ## 2d array -> float
+    mu_hat = mu_hat[0][0]
     
-    # correlation function
+    if verbose: print('mu_hat = %.4f' % mu_hat)
+    
     corr = corr_func(ps, qs)
     
     def pred_func(x_new):
         # vector of correlations between x_new and xs
-        r = matrix([corr(x_new, x_old) for x_old in xs]).T
+        r = np.array( [ [corr(x_new, x_old)] for x_old in xs] )
         # a transcription of Eq 7
-        return mu_hat + r.T*(R_inv_y - R_inv * (ones * mu_hat))
+        temp = R_inv.dot( ones * mu_hat )
+        temp2 = R_inv_y - temp
+        temp3 = r.T.dot(temp2)
+        t3val = temp3[0][0]
+        
+        return (mu_hat + t3val)   
     
     return pred_func
     
@@ -57,7 +73,7 @@ def dist_func(ps, qs):
 def corr_func(ps, qs):
     dist = dist_func(qs,ps)
     def corr(x1, x2):
-        return exp(-dist(x1, x2))
+        return np.exp(-dist(x1, x2))
     return corr
     
 ## Returns R, a matrix whose i,jth entry is the correlation between
@@ -73,28 +89,25 @@ def corr_matrix(xs, ps, qs):
             ## save time by exploiting diagonal symmetry
             if   i > j: this_row.append(out_arr[j][i])
             elif i < j: this_row.append(corr(xs[i],xs[j]))
-            else: this_row.append(0)
+            else: this_row.append(1)
         out_arr.append(this_row)
-    return matrix(out_arr)
+    return np.array(out_arr)
 
 ## the best prediction of the mean mu, Jones Eq(5), given the output vect ys
 ## and the correlation matrix R
 def mu_hat(ys, R_inv):
-    ones = one_vect(len(ys))
-    ones_T_R_inv = (ones.T) * R_inv
-    return (ones_T_R_inv * matrix(y)) / (ones_T_R_inv * ones)
+    ones = np.array( [[ 1 ]for i in range(len(ys)) ] )
+    ones_T_R_inv = ones.T.dot(R_inv)
+    return ones_T_R_inv.dot(ys) / ones_T_R_inv.dot(ones)
     
     
 ## the best prediction of the stdev, jones Eq(6). Assumes ys is already a
 ## column matrix in numpy. R is the correlation matrix.
 def stdev_hat(ys, R_inv, mu):
     n = len(ys)
-    ones = one_vect( n )
-    return ( (ys - ones*mu).T * R_inv * (ys - ones*mu) ) / n
+    ones = np.array( [[ 1 ]for i in range(len(ys)) ] )
+    return ( (ys - ones*mu).T.dot( R_inv.dot(ys - ones*mu) ) ) / n
     
-# returns a numpy matrix which is a column vector of ones
-def one_vect(len):
-    return matrix( [ [1] for i in range( len ) ] )
 
 ## The concentrated likelihood function, Eqs 4-6 from Jones et al.
 ## takes args xs, ys (evaluated inputs and outputs)
@@ -104,18 +117,17 @@ def one_vect(len):
 ## to maximize likelihood.
 def conc_likelihood(xs, ys, ps, qs):
     R = corr_matrix(xs, ps, qs)
-    R_inv = R.I
+    R_inv = la.inv(R)
     mu = mu_hat(ys, R_inv)
     stdev = stdev_hat(ys, R_inv, mu)
-    # bc ys is a column vector
-    n = float(len(ys[0]))
-    ones = one_vect(n)
+    n = len(ys)
+    ones = np.array( [[ 1 ]for i in range(len(xs)) ] )
         
     # linear term
-    lin_term = 1 / ( (2 * math.pi * stdev)**(n/2) * R.det ** (0.5) )
+    lin_term = 1 / ( (2 * pi * stdev)**(n/2.0) * la.det(R) ** (0.5) )
     
     # combining the right half of 4 with 6 gives this simplified expression
-    exp_term = exp(n/2)
+    exp_term = exp(n/2.0)
     
     return lin_term*exp_term
   
