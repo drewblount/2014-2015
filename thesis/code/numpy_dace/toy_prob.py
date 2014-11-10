@@ -38,7 +38,6 @@ lik = conc_likelihood(X, Y, P, Q)
 print("likelihood = %.3f" % lik)
 
 
-
 plt.axis([0,5,0,1])
 plt.xlabel('x')
 plt.ylabel('y(x)')

@@ -24,5 +24,3 @@ def dace_predictor_test(num_dims, num_samples, num_tests = 2, verbose=True):
         
     # so interpreter user can play with it
     return pred_func
-    
-dace_predictor_test(10,10)

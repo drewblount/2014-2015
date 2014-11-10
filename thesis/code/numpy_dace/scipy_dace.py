@@ -13,8 +13,8 @@ from scipy import linalg as la
 from random import random
 import scipy.optimize as op
 
-## X is an array of the input vectors which have been evaluated already
-## by the black box function, and Y is the array of corresponding outputs.
+## X is a vector of the input values which have been evaluated already
+## by the black box function, and Y is the vector of corresponding outputs.
 ## Q and P are regression terms--thetas and P from Jones Eq(1)
 ## returns the DACE predictor function as defined in Jones etc Eq (7)
 ## the type of each variable is assumed to
@@ -115,7 +115,7 @@ def stdev_hat(Y, R_inv, mu):
 ## likelihood of observing the X, Y given the
 ## P, Q. This is the function we wish to optimize when choosing P, Q
 ## to maximize likelihood.
-def conc_likelihood(X, Y, P, Q, verbose=False):
+def conc_likelihood(X, Y, P, Q):
     R = corr_matrix(X, P, Q)
     R_inv = la.inv(R)
     mu = mu_hat(Y, R_inv)
@@ -123,27 +123,13 @@ def conc_likelihood(X, Y, P, Q, verbose=False):
     n = len(Y)
     ones = np.array( [[ 1 ]for i in range(len(X)) ] )
         
-    # I've been getting errors when the determinate of R is negative, so:
-    # [what do Jones et al mean by |R| in eq. 4?]
-    R_det = la.det(R)
-    
-    if R_det < 0:
-        R_det *= -1
-        if verbose:
-            print("det(R) < 0 for parameters (value will be negated):")
-            print("X = " + str(X))
-            print("Y = " + str(Y))
-            print("P = " + str(P))
-            print("Q = " + str(Q))
-            print()
-        
     # linear term
-    lin_term = 1 / ( (2 * pi * stdev)**(n/2.0) * R_det ** (0.5) )
+    lin_term = 1 / ( (2 * pi * stdev)**(n/2.0) * la.det(R) ** (0.5) )
     
     # combining the right half of 4 with 6 gives this simplified expression
     exp_term = exp(n/2.0)
     
-    return float(lin_term*exp_term)
+    return lin_term*exp_term
   
 ## for a given X, Y, finds P and Q that optimize the above function
 #def max_likelihood_params(X, Y):
