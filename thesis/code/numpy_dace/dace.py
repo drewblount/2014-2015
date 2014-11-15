@@ -59,6 +59,21 @@ def dace_predictor(X, Y, P, Q, verbose=False):
     
     return pred_func
     
+# returns the predictor's error function
+def pred_error(X,Y,P,Q,verbose=False):
+    R = corr_matrix(X, P, Q)
+    R_inv = la.inv(R)
+    m_hat = mu_hat(Y, R_inv)
+    sig_hat = stdev_hat(Y, R_inv, m_hat)
+    ones = np.array( [[ 1 ]for i in range(len(X)) ] )
+    corr = corr_func(P, Q)
+    def pred_err_func(x_new):
+        r = np.array( [ [corr(x_new, x_old)] for x_old in X] )
+        fraction = (ones.T.dot(R_inv).dot(r))**2 / ones.T.dot(R_inv).dot(ones)
+        out = sig_hat*(1 - r.T.dot(R_inv).dot(r) + fraction)
+        if verbose: print('output type is ' + str(type(out)))
+        return out
+    return pred_err_func
 
 ## Jones Eq(1)--takes vectors of regressors Q (thetas in Jones) and P,
 ## and returns a dist_funcance function for input vectors
@@ -108,6 +123,8 @@ def stdev_hat(Y, R_inv, mu):
     ones = np.array( [[ 1 ]for i in range(len(Y)) ] )
     return ( (Y - ones*mu).T.dot( R_inv.dot(Y - ones*mu) ) ) / n
     
+
+
 
 ## The concentrated likelihood function, EQ 4-6 from Jones et al.
 ## takes args X, Y (evaluated inputs and outputs)

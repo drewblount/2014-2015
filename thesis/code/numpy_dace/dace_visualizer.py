@@ -10,7 +10,7 @@ import numpy as np
 
 # This function maps the concentrated likelihood of X and Y over P*Q parameter space
 # and plots it if plot=True, otherwise it returns the likelihood map
-def likelihood_map(X, Y, Pmin=1, Pmax=2, P_res=0.1, Qmin=0, Qmax=10, Q_res=1, plot=True):
+def likelihood_map(X, Y, Pmin=1, Pmax=2, P_res=0.025, Qmin=0, Qmax=10, Q_res=.25, plot=True):
     
     # each p and q is a 1d vector, so Ps and Qs are np arrays of singleton arrays of P, Q vals
     Ps = np.arange(Pmin, Pmax, P_res)[np.newaxis].T
@@ -25,11 +25,15 @@ def likelihood_map(X, Y, Pmin=1, Pmax=2, P_res=0.1, Qmin=0, Qmax=10, Q_res=1, pl
     
     
     if plot:
-        plt.pcolor(likelihood_data)
         fig, ax = plt.subplots()
         heatmap = ax.pcolor(likelihood_data)
-        ax.set_xticklabels([p[0] for p in Ps])
-        ax.set_yticklabels([q[0] for q in Qs])
+        # not sure why I have to toy with the tick labels like this to get 'em right
+        ax.set_xticklabels([p[0]*2-1 for p in Ps])
+        plt.xlabel('P')
+        ax.set_yticklabels([q[0]*2 for q in Qs])
+        plt.ylabel('Q')
+        plt.title('Likelihood surface for given X, Y')
+        plt.legend()
         plt.show()
         
     return likelihood_data
