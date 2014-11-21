@@ -88,7 +88,7 @@ def dist_func(P, Q):
 def corr_func(P, Q):
     dist = dist_func(Q,P)
     def corr(x1, x2):
-        return np.exp(-dist(x1, x2))
+        return exp(-dist(x1, x2))
     return corr
     
 ## Returns R, a matrix whose i,jth entry is the correlation between
