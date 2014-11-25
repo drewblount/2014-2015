@@ -1,5 +1,6 @@
 from ego import *
 from random import random
+from lazyprop import *
 
 # Reality check: does the predictor predict each already-evaluated function value?
 def pred_y_check(E, verbose=False, eps = 0.0001):
@@ -21,12 +22,38 @@ X = [[1.5],[3.5],[2.5],[3.0],[0.5]]
 Y = [0.25,0.75,0.9,0.8,0.1]
 E = egoist(X, Y)
 
-print E.R
+#print E.Rch
 
-pred_y_check(E,True)
+pred_y_check(E)
 
+'''
 for _ in range(10):
     x = random()*10
     print('The error at x = '+str(x)+' is ' + str( E.pred_err([x]) ) )
+'''
+
+E.plot1d_sliders()
+
+# makes sure that lazyprops are deleted
+class testc:
+    def __init__(self):
+        self.whatever = 'hey'
+    @lazyprop
+    def X(self):
+        return 10
+        
+        
+def test_lazyprop():
+    a = testc()
+    print('a = ' + str(a.__dict__))
+    print('making a\'s lazyprops...')
+    b = a.X
+    print('a = ' + str(a.__dict__))
+    print('deleting a\'s lazyprops...')
+    reset_lps(a)
+    print('a = ' + str(a.__dict__))
     
-E.plot1d()
+
+    
+        
+        

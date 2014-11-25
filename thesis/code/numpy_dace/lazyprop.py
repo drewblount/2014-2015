@@ -27,9 +27,10 @@ def lazyprop(fn):
         return getattr(self, attr_name)
     return _lazyprop
 
-def delete_lp(self, fn):
-    attr_name = '_lazy_' + fn.__name__
-    del self.attr_name
+def reset_lps(self):
+    lazy_keys = [k for k in self.__dict__ if (k[0:6] == '_lazy_') ]
+    for key in lazy_keys:
+        delattr(self, key)
     
 ## Example code: (from above-linked StackExchange)
 """
