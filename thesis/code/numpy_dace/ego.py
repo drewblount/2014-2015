@@ -1,10 +1,12 @@
 ## an object-oriented EGO algorithm machine
 
 
-from math import exp, pi
+from math import exp, pi, sqrt
 import numpy as np
 from scipy import linalg as la
 from scipy.optimize import minimize
+from scipy.stats import norm
+
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from operator import add, sub
@@ -130,16 +132,16 @@ class egoist:
     
     # Jones eq(6)
     @lazyprop
-    def stdev_hat(self):
+    def var_hat(self):
         return ( self.Y_min_mu.T.dot(self.R_inv_Y_min_mu) ) / self.n
-        
+                
     # Jones eq 4 w/ 5, 6 inserted for mu, stdev
     def conc_likelihood(self, new_P=None, new_Q=None):
         if new_P!=None: self.P=new_P
         if new_Q!=None: self.Q=new_Q
         if new_P!=None or new_Q!=None: reset_lps(self)
         
-        inv_linear_term =(2.0 * pi * self.stdev_hat)**(self.n/2.0) * self.R_det ** (0.5)
+        inv_linear_term =(2.0 * pi * self.var_hat)**(self.n/2.0) * self.R_det ** (0.5)
         return exp(self.n/2.0)/inv_linear_term
     
     
@@ -172,7 +174,47 @@ class egoist:
     def pred_err(self, x_new):
         r = self.corr_vector(x_new)
         R_inv_r = self.R_inv.dot(r)
-        return (self.stdev_hat * (1 - r.dot(R_inv_r) + ( 1 - self.ones.dot( R_inv_r) )**2 / (self.ones_R_inv_ones) ))
+        return (self.var_hat * (1 - r.dot(R_inv_r) + ( 1 - self.ones.dot( R_inv_r) )**2 / (self.ones_R_inv_ones) ))
+        
+      
+    # what follows below is are the components required to maximize the expected improvement
+    # function (Jones Eq. 15)  
+    @lazyprop
+    def stdev(self):
+        return sqrt(self.var_hat)
+        
+    # current minimum function value (assume optimization problem is minimization)
+    @lazyprop
+    def f_min(self):
+        return np.min(self.Y)
+    
+    # expected improvement function (Jones Eq. 15)
+    def exp_improvement(self, x_new):
+        # should predict(x) be stored lazily? don't want to double-call the predictor function
+        # (maybe unnecessary; is the predictor function ever explicitly used in the iterative process?)
+        y = self.predict(x_new)
+        # improvement over current minimum
+        improvement = self.f_min - y
+        normed_improvement = improvement/self.stdev
+        
+        return(improvement * norm.cdf(normed_improvement) + self.stdev * norm.pdf(normed_improvement))
+        
+        
+    ## In prototype stage: this is the function that when called, will return
+    ## the next x value that should be evaluated by the black box function
+    def iterate(self):
+        # works by choosing P, Q params to maximize likelihood equation
+        self.generate_predictor()
+        # works by minimizing the ex
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
     # assumes a 1d x-space
     def pred_over(x_range):
