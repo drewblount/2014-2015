@@ -170,11 +170,11 @@ class egoist:
         r = self.corr_vector(x_new)
         return self.mu_hat + r.dot(self.R_inv_Y_min_mu)
         
-    # the error of the predictor
+    # the error of the predictor, Jones Eq. 9
     def pred_err(self, x_new):
         r = self.corr_vector(x_new)
         R_inv_r = self.R_inv.dot(r)
-        return (self.var_hat * (1 - r.dot(R_inv_r) + ( 1 - self.ones.dot( R_inv_r) )**2 / (self.ones_R_inv_ones) ))
+        return (self.var_hat * (1 - r.dot(R_inv_r) + (( 1 - self.ones.dot( R_inv_r) )**2 / (self.ones_R_inv_ones)) ))
         
       
     # what follows below is are the components required to maximize the expected improvement
@@ -195,9 +195,13 @@ class egoist:
         y = self.predict(x_new)
         # improvement over current minimum
         improvement = self.f_min - y
-        normed_improvement = improvement/self.stdev
+        st_dev = sqrt(self.pred_err(x_new))
         
-        return(improvement * norm.cdf(normed_improvement) + self.stdev * norm.pdf(normed_improvement))
+        # catches when x_new is in X (already evaluated points, 100% certain of prediction)
+        if (st_dev == 0.0): return(0.0)
+        
+        normed_improvement = improvement/st_dev
+        return(improvement * norm.cdf(normed_improvement) + st_dev * norm.pdf(normed_improvement))
         
         
     ## In prototype stage: this is the function that when called, will return
@@ -237,7 +241,8 @@ class egoist:
         plt.show()
         
     # Performs the above, with sliders to manipulate P and Q
-    def plot1d_sliders(self, x_min=0.0, x_max=5.0, x_delta=0.01, y_min=0.0, y_max=1.0, P_min=1.0,P_max=2.0,Q_min=0.1,Q_max=10.0):
+    # also has option to show expected improvement
+    def plot1d_sliders(self, x_min=0.0, x_max=5.0, x_delta=0.01, y_min=0.0, y_max=1.0, P_min=1.0,P_max=2.0,Q_min=0.1,Q_max=10.0, exp_imp=False):
         
         fig, ax = plt.subplots()
         plt.subplots_adjust(left=0.25, bottom=0.25)
@@ -257,6 +262,17 @@ class egoist:
         p_err_line, = plt.plot(pred_range, pl_errors, color="green")
         m_err_line, = plt.plot(pred_range, mi_errors, color="green")
         plt.axis([x_min, x_max, y_min, y_max])
+        
+        
+        # plot the expected improvement
+        if exp_imp:
+            # make another axis (exp improv. is at a smaller scale than predictor)
+            ax2 = ax.twinx()
+            imps = [ self.exp_improvement([x]) for x in pred_range ]
+            ax2.plot(pred_range, imps, color='r')
+            ax2.set_ylabel('expected improvement', color='r')
+            for tl in ax2.get_yticklabels():
+                tl.set_color('r')            
                 
         # sets slider locations
         axP = plt.axes([0.25, 0.05, 0.65, 0.03])
@@ -281,7 +297,13 @@ class egoist:
             mi_errors = map(sub, preds, errors)
             m_err_line.set_ydata(mi_errors)
             
+            if exp_imp:
+                imps = [ self.exp_improvement([x]) for x in pred_range ]
+            
+            
             fig.canvas.draw_idle()
+            ax2.figure.canvas.draw_idle()
+                        
                         
         slidP.on_changed(update)
         slidQ.on_changed(update)

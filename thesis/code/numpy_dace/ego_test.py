@@ -32,7 +32,7 @@ for _ in range(10):
     print('The error at x = '+str(x)+' is ' + str( E.pred_err([x]) ) )
 '''
 
-E.plot1d_sliders()
+E.plot1d_sliders(exp_imp=True)
 
 # makes sure that lazyprops are deleted
 class testc:
