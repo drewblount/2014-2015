@@ -150,14 +150,13 @@ class egoist:
     # ((P[0]min,P[0]max),...(Q[n-1]min,Q[n-1]max))
     # note that None is a valid upper/lower bound
     
-    # WARNING: MIGHT ONLY WORK FOR 1D
+    # WARNING: MIGHT ONLY WORK FOR 1D (because of )
     def max_likelihood(self, param_range=((1.0,2.0),(0.01,None)), verbose=False):
         
         # the function to be minimized. note that P is the first half of z, Q the second
         def neg_conc(z): return (-1 * self.conc_likelihood(z[:self.k],z[self.k:]))
         z0 = self.P + self.Q
-        
-        res = minimize(neg_conc, z0, bounds=param_range)
+        res = minimize(neg_conc, z0, method='L-BFGS-B',bounds=param_range)
         return res
         
     
