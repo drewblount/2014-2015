@@ -129,13 +129,15 @@ function drawScene() {
 	// moves to position to draw first shape, rotates and draws it.
 
 	// now draw two more cubes farther back
+    mat4.translate(mvMatrix, [0.0, 0.0, -10.0]);
+    //if(drawIcos){icos.drawShape(gl)};
+    mvPushMatrix();
+    mat4.rotate(mvMatrix, degToRad(r2), [1, 1, 1]);
+	//cubit.drawShape(gl);
     if (drawIcos) {
         icos.drawShape(gl);
     }
-    mat4.translate(mvMatrix, [0.0, 0.0, -10.0]);
-    mvPushMatrix();
-    mat4.rotate(mvMatrix, degToRad(r2), [1, 1, 1]);
-	cubit.drawShape(gl);
+
     mvPopMatrix();
 	
 
@@ -171,7 +173,6 @@ function webGLStart() {
     initGL(canvas);
     initShaders();
 	cubit.initBuffs(gl);	
-    //icos.initBuffs(gl);	   
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
@@ -191,16 +192,30 @@ function resizeCanvas() {
    }
 }
 
+var cubit = new Shape(cubeV, cubeF);
+cubit.setRandomGreyscale();
+console.log('cubit is a ' + cubit.verbose());
+
+    
+
+
 // is this good practice?
+var icos_fname = OBJ_name_parse('icosahedron');
 var drawIcos = false;
 
-
-$('body').click(function(){
-    //icos = 
-    alert('outer: ' + icos.V);
-    drawIcos = true;
+var icos_string, icos;
+// the shape can only be handled as a callback from loading the .obj file, because file loads are by default asynchronous (no function outside of the .done callback can assume that the original .obj file was ever loaded)
+jQuery.get(icos_fname, function(data) {
+    icos_string = data.toString();
+}).done(function(){
+    icos = fromOBJ_string(icos_string);
+    icos.split_verts();
+    icos.setRandomGreyFaces();
+    console.log('icos is a ' + icos.verbose());
+    console.log('the centroid of icos is ' + icos.find_centroid());
+    icos.initBuffs(gl);
+    drawIcos=true;
 });
-
 
 
 

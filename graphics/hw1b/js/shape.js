@@ -3,7 +3,7 @@
 // for the initial loading of shapes (from OBJ files or hard-coded data) into
 // webgl
 
-var icos;
+//var icos;
 // assumes 'vertices' and 'faces' are each either arrays of arrays (one array for each v/f), or flat 1-d arrays representing 3-vectors. In either case, the Shape's V and F are stored as arrays of 3-arrays.
 function Shape (vertices, faces) {
 	// typeof(array)='object' in JS
@@ -57,54 +57,15 @@ var get_OBJ_string = function(fname, saveStr) {
     console.log('ret = ' + ret);
 }
 
-var icos_string = '';
-get_OBJ_string('icosahedron', icos_string);
-console.log('icos_string = ' + icos_string);
-setTimeout(function(){ console.log('@3 secs icos_string = ' + icos_string); }, 3000);
-
-var fromOBJ = function(fname) {
-    
-    fullname = OBJ_name_parse(fname);
-    var out2 = jQuery.get(fullname, function(data) {
-        //console.log(data);
-        var text = data.toString();
-        var lines = text.split('\n');
-        var vertices = [];
-        var faces = [];
-        // adds vertices and faces, and ignores all else for now
-        for( i=0; i<lines.length; i++ ){
-            var words = lines[i].split(/[ ,]+/); //regexp for any num of commas/spaces
-            var firstLetter = words[0][0];
-            if (firstLetter == 'v' || firstLetter == 'V') {
-                var vect = [];
-                for( j=1;j<words.length;j++ ){
-                    vect[j-1] = parseFloat(words[j]);    
-                }
-                vertices.push(vect);
-            } else if (firstLetter == 'f' || firstLetter == 'F') {
-                var fac = [];
-                for( j=1;j<words.length;j++ ){
-                    fac[j-1] = parseInt(words[j]);    
-                }
-                faces.push(fac);
-            }
-        };
-        var out = new Shape(vertices, faces);
-        console.log('out is a ' + out);
-        
-        //console.log('inner: '+out.V);
-        icos = out;
-        return out;
-    });
-    console.log('out2 is a ' + out2);
-
-    return out2;
-};
-
+// region
 
 // in efforts to isolate the asynchronous ajax section of the code:
 // fstring is expected to be the OBJ file contents in string form
-var fromOBJ_string = function(fstring) {
+// fix_index is an optional arg. If true, it subtracts 1 from every
+// vertex index (when describing a face), because some .obj files use
+// 1-first indexing rather than 0-first
+var fromOBJ_string = function(fstring, fix_index) {
+        if (typeof(fix_index) === 'undefined') {var fix_index = true};
         var lines = fstring.split('\n');
         var vertices = [];
         var faces = [];
@@ -121,7 +82,8 @@ var fromOBJ_string = function(fstring) {
             } else if (firstLetter == 'f' || firstLetter == 'F') {
                 var fac = [];
                 for( j=1;j<words.length;j++ ){
-                    fac[j-1] = parseInt(words[j]);    
+                    if (fix_index) {fac[j-1] = parseInt(words[j]) - 1}
+                    else {          fac[j-1] = parseInt(words[j])};
                 }
                 faces.push(fac);
             }
@@ -138,52 +100,44 @@ var fromOBJ_string = function(fstring) {
 };
 
 
-
-
-
-function get_OBJ_V_F(fname) {
-    fullname = fname;
-    if (fname.substring(fname.length-4,fname.length) != '.obj') {
-        fullname = fullname.concat('.obj');
+// makes it such that each vertex is only on one face. Right now, I want to do this to make
+// each face its own color.
+Shape.prototype.split_verts = function() {
+    var new_V = [];
+    var new_F = [];
+    for(i=0;i<this.F.length;i++){
+        var face = this.F[i];
+        var new_face = []
+        for(j=0;j<face.length;j++){
+            new_face = new_face.concat(new_V.length);
+            new_V = new_V.concat([this.V[face[j]]]);
+        }
+        new_F = new_F.concat([new_face]);
     }
-    // remember, a user of the webpage doesn't want JS to open a local file, but one hosted somewhere online (assumed to be in the current directory on my page if not specified). Assumed: any url would start with http
-    if (fname.substring(0,4) != 'http') {
-        var loc = window.location.pathname; 
-        var dir = loc.substring(0, loc.lastIndexOf('/'));
-        fullname = dir.concat('/'.concat(fullname));
-    }
+    this.V = new_V;
+    this.F = new_F;
+}
 
-    return jQuery.get(fullname, function(data) {
-        var text = data.toString();
-        var lines = text.split('\n');
-        var vertices = [];
-        var faces = [];
-        // adds vertices and faces, and ignores all else for now
-        for( i=0; i<lines.length; i++ ){
-            var words = lines[i].split(/[ ,]+/); //regexp for any num of commas/spaces
-            var firstLetter = words[0][0];
-            if (firstLetter == 'v' || firstLetter == 'V') {
-                var vect = [];
-                for( j=1;j<words.length;j++ ){
-                    vect[j-1] = parseFloat(words[j]);    
-                }
-                vertices.push(vect);
-            } else if (firstLetter == 'f' || firstLetter == 'F') {
-                var fac = [];
-                for( j=1;j<words.length;j++ ){
-                    fac[j-1] = parseInt(words[j]);    
-                }
-                faces.push(fac);
-            }
-        };
-        return [vertices, faces];
-    });
+Shape.prototype.find_centroid = function() {
+    var avgV = [];
+    for(j=0;j<this.V[0].length;j++){avgV = avgV.concat([0])};
+    for(i=0;i<this.V.length;i++){
+        for(j=0;j<this.V[0].length;j++){
+            avgV[j]+=this.V[i][j];
+        }
+    }
+    for(j=0;j<this.V[0].length;j++){
+        avgV[j]=Math.round(avgV[j]/this.V.length*1000)/1000;
+    }
+    // only four decimal accuracy (gets rid of float weirdness)
+    return avgV
 }
 
 
-function shapeFromOBJ_url(url) {
-    
-};
+// for decomposing the icos to a sphere:
+// takes a face in a shape, and sierpinski-style makes it into four faces (adding vertices as necessary). Each new vertex is scaled radially so that its distance from the centroid is r
+Shape.prototype.decompose_with_centroid
+
 
 
 // Shape.color should be a flat array of rgba values (4 array entries) for each vertex
@@ -204,6 +158,31 @@ Shape.prototype.setRandomGreyscale = function() {
 	}
 };
 
+// like above, but makes each face a uniform random grey shade (if different faces share a vertex, whichever face is last in the F array will be a solid color at the expense of those before it)
+Shape.prototype.setRandomGreyFaces = function() {
+	var l; //for lightness
+    var colorObj = {};
+    this.color = [];
+	for(i=0;i<this.F.length;i++){
+		l = Math.random()*0.3+0.35 ; 
+		var f = this.F[i];
+        for(j=0;j<f.length;j++){
+            if(colorObj[f[j]] === undefined){colorObj[f[j]] = [l,l,l,1]}; 
+        }
+	}
+    // now copy the dictionary to an array
+    for(i=0;i<this.V.length;i++){
+        //this.color = this.color.concat(colorObj[i]);
+        if(colorObj[i] !== undefined){
+            this.color = this.color.concat(colorObj[i]);
+        } else { // in case a vertex isn't in any face
+            this.color = this.color.concat([l,l,l,1]);
+        }
+    }
+};
+
+
+
 Shape.prototype.getInfo = function() {
 	return "Shape with " + this.V.length + " vertices and " + this.F.length + " faces.";
 };
@@ -219,12 +198,20 @@ Shape.prototype.valueOf = function() {
 Shape.prototype.verbose = function() {
 	var outS = "VERTICES:\n";
 	for (i=0;i<this.V.length;i++){
-		outS = outS.concat(Str(this.V[i])+',\n');
+		outS = outS.concat(String(this.V[i])+',\n');
 	}
 	outS = outS.concat('FACES:\n')
 	for (i=0;i<this.F.length;i++){
-		outS = outS.concat(Str(this.F[i])+',\n');
+		outS = outS.concat(String(this.F[i])+',\n');
 	}
+    outS = outS.concat('COLORS:\n')
+    if (typeof(this.color) !== 'undefined') {
+        for (i=0;i<this.color.length;i++){
+		  outS = outS.concat(String(this.color[i])+',\n');
+        }
+    }else {
+        outS = outS.concat('<none>');
+    }
 	return outS;
 };
 
@@ -285,7 +272,6 @@ Shape.prototype.drawShape = function(gl) {
 	
 };
 
-
 var cubeV = [
         // Front face
         -1.0, -1.0,  1.0,
@@ -322,8 +308,7 @@ var cubeV = [
         -1.0, -1.0,  1.0,
         -1.0,  1.0,  1.0,
         -1.0,  1.0, -1.0
-    ];
-	
+    ];	
 var cubeF = [
 	0, 1, 2,      0, 2, 3,    // Front face
 	4, 5, 6,      4, 6, 7,    // Back face
@@ -332,15 +317,19 @@ var cubeF = [
 	16, 17, 18,   16, 18, 19, // Right face
 	20, 21, 22,   20, 22, 23  // Left face
 ];
-var cubit = new Shape(cubeV, cubeF);
-cubit.setRandomGreyscale();
-console.log('cubit is a ' + cubit.toString());
-var icos = fromOBJ('icosahedron');;
-console.log('icos is a ' + icos.toString());
-/*
-var icos_data = jQuery.get(fullname, function(data) {
-        console.log(data);
-        var text = data.toString();
-*/
+
+// endregion
+
+
+//var icos_data = $.get(
+
+
+
+
+//
+
+
+//icos_data
+
 
 
