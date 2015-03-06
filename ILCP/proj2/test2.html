@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>click here</title>
+  <script src="jquery-1.11.1.js"></script>
+	<script src="vector2.js"></script>
+</head>
+<body>
+ 
+<div><a href="www.youtube.com">click here</a></div>
+ 
+<script>
+
+var link_p = new point( $(window).width()/2.0 ,$(window).height()/2);
+$( "div:last" ).offset( { top: link_p.y, left: link_p.x} );
+
+$( "html" ).mousemove(function( event ) {	
+	
+	var mouse = new point(event.clientX, event.clientY);			
+	var m_to_l = mouse.pointTo(link_p);
+	var distance = m_to_l.mag();
+	var angle = m_to_l.heading();
+	link_p.plusEqPolar(300/distance, angle);
+			
+	$( "div:last" ).offset( { top: link_p.y, left: link_p.x} );
+	
+});
+</script>
+ 
+</body>
+</html>

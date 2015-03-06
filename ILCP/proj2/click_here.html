@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>click here</title>
+  <script src="jquery-1.11.1.js"></script>
+	<script src="point.js"></script>
+</head>
+<body>
+<div><a href="www.youtube.com">click here</a></div>
+ 
+<script>
+
+var link = new point( $(window).width()/2.0 ,$(window).height()/2);
+$( "div:first" ).offset( { top: link.y, left: link.x} );
+
+$( "html" ).mousemove(function( event ) {	
+	
+	var mouse = new point(event.clientX, event.clientY);
+	var mouse_to_l = mouse.pointTo(link);
+	var angle = mouse_to_l.heading();
+	var distance = mouse_to_l.mag()
+  link.plusEqPolar(100/Math.sqrt(distance),angle);
+				
+});
+
+</script>
+ 
+</body>
+</html>

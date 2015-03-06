@@ -1,0 +1,36 @@
+\begin{thebibliography}{}
+
+\bibitem[Hamadi et~al., 2012]{hamadi_autonomous_2012}
+Hamadi, Y., Monfroy, E., and Saubion, F., editors (2012).
+\newblock {\em Autonomous {Search}}.
+\newblock Springer Berlin Heidelberg, Berlin, Heidelberg.
+
+\bibitem[Hutter et~al., 2011]{hutter_sequential_2011}
+Hutter, F., Hoos, H., and Leyton-Brown, K. (2011).
+\newblock Sequential model-based optimization for general algorithm
+  configuration.
+\newblock In Coello, C., editor, {\em Learning and Intelligent Optimization},
+  volume 6683 of {\em Lecture Notes in Computer Science}, pages 507--523.
+  Springer Berlin Heidelberg.
+
+\bibitem[Jones et~al., 1998]{jones_efficient_1998}
+Jones, D.~R., Schonlau, M., and Welch, W.~J. (1998).
+\newblock Efficient global optimization of expensive black-box functions.
+\newblock {\em Journal of Global optimization}, 13(4):455--492.
+
+\bibitem[ProtoLife, 2013]{protolife_pdt_2013}
+ProtoLife (2013).
+\newblock {ProtoLife PDT} overview. http://protolife.com/npdtov.html.
+\newblock Accessed: 2015-02-26.
+
+\bibitem[Rasmussen and {Williams, C. K. I.}, 2006]{rasmussen_gaussian_2006}
+Rasmussen, C.~E. and {Williams, C. K. I.} (2006).
+\newblock {\em Gaussian {Processes} for {Machine} {Learning}}.
+\newblock MIT Press.
+
+\bibitem[Sacks et~al., 1989]{sacks_design_1989}
+Sacks, J., Welch, W.~J., Mitchell, T.~J., and Wynn, H.~P. (1989).
+\newblock Design and analysis of computer experiments.
+\newblock {\em Statist. Sci.}, 4(4):409--423.
+
+\end{thebibliography}

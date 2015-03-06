@@ -1,0 +1,1 @@
+I’ve just modified my code from hw1—the obj reader isn’t quite done yet. The whedge.js file takes the Shape class as its starting point—note that Shapes are sorta just an obj-or framework for OBJ-like storage of meshes with faces and vertices.

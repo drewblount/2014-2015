@@ -1,0 +1,37 @@
+To me, the most remarkable fact of nature is the organic emergence of life, complexity,
+and intelligence in our seemingly mechanistic universe. It is shocking that the possibilities of
+human emotion, migrating birds, and hacking were all somehow implicit
+in the primordial universe of only radiation and particles. To me, this fact is not remarkable
+for cosmological nor biological reasons, but computational and information-theoretic.
+
+I wish to understand where organization comes from and how systems can increase their own complexity.
+I see evolutionary biology, complex systems theory, cognitive science, evolutionary computation, 
+and machine learning as a spectrum of disciplines addressing this issue. While machine learning
+is hardly concerned with questions of the universe's development, it is concerned with replicating
+exactly the phenomena I am most interested in: the iterative development of structure where once was
+homogeneity and randomness.
+
+As a researcher, I intend primarily to study methods for detecting organization and structure
+within complex systems, and using such tools, research where these structures come from and why.
+This has been my goal at the Artificial Life Lab at Reed College, where I've studied the US Patent 
+record over the past year. Viewing the network of patent citations as an enormous and convoluted
+family tree, I've used  text-mining techniques to formalize the notion of a patent's `traits'. With 
+traits and a family tree, the patent record becomes an analog of an evolving biological population, and my
+research project has been investigating the depth of this analogy. Culture, like biological evolution, 
+has the peculiar habit of creating things that truly are new under the sun. Thus, I wish to answer this question:
+is cultural novelty produced by the same functional process as biological novelty? If so, culture, like biological evolution, should be the focus of much scrutiny in computer science, and its study should influence the development of machine learning algorithms. This question is far too big to answer decisively in the short time I've worked on it, so my work has been largely in developing analytic methodologies for citation-linked text corpuses. In doing so, I built an 80 Gb database, learned two programming languages, and how to employ MapReduce left and right.
+
+While my research at the Artificial Life Lab crosses biological and cultural evolution, I've been simultaneously researching with a Teuscher.:Lab at Portland State University, where we cross the disciplines of biochemistry and machine learning. With graduate student Peter Banda, I've been working for over a year and a half to design and simulate the first learning-capable neural net implemented in a chemical reaction network. Peter designed single chemical neurons, and I helped him devise a scheme for networking these neurons without confusing the chemical species composing each. Simulating our chemical systems is an enormous computational task, so I gained experience with enterprise-level deployment and using a supercomputer cluster. We recently achieved our goal, and created a network of chemical reactions that can learn all binary two-input logic functions. I am the first author on a paper describing this work, \emph{Feedforward Chemical Neural Network: A Compartmentalized Chemical System that Learns XOR}, which will be submitted to \emph{IEEE Trans. Neural Netw.} in late 2014. I also co-authored a technical paper describing our web-based chemical simulation framework, which was published in the proceedings of HMMM.
+
+
+Simultaneously to taking classes and researching with the above two labs, I pursued a completely independent research project on empirically identifying adaptations in evolving populations. This work epitomizes my interest in complexity-generating systems, and my desire to taxonomize them and quantify their study. This project grew out of a paper I wrote for professor Mark Bedau's \emph{Philosophy of Biology} class; at Prof. Bedau's encouragement, I developed it into an extended abstract which was presented at the Artificial Life '14 conference. I was later contacted by the conference committee and asked to develop this project further, into a full paper to be published in a special journal issue about the results of the conference. This extended version is currently undergoing review.
+
+Research excites me, but the most satisfying thing I have done as an undergraduate has been tutoring Intro Computing and Algorithms. I have held bi-weekly office hours as a tutor for one or the other class since September of 2013, and developed lasting relationships with several students. This past week, I helped a pair of students implement a Markov model for random text generation, who had never written a line of code in September. These students came to me each week this semester, and witnessing their growth and joy at learning has reaffirmed my interest in computer science, and my faith in educational institutions. A major draw of graduate study is the opportunity to further my teaching career---to get better at sharing interesting ideas with others, to help students discover and understand the concepts that most fascinate me.
+
+I've been a busy undergrad. After getting a nuclear reactor operator's license as a freshman, I realized that I was more interested in computing than in physics. Since then, I've taken every opportunity to learn about computer science at my small college without a CS department. I've worked with friends to do quantitative finance with cryptocurrencies; given three public, hour-long lectures; and single-handedly created installed an interactive computer art piece as part of a weekend-long festival. I've become the most prolific computing tutor at Reed. I have published two papers, submitted one, and am submitting a fourth before the end of 2014. I truly feel that I am thriving, and am doing now what I want to do for many years: learning, researching, programming, publishing, and teaching.
+
+To achieve this lifestyle, I need a PhD.
+
+to work intensely towards academic goals, striving to learn new things about organization, complexity, and automated discovery---all while constantly creating computational art and experiments, pursuing my whimsy with code, answering "what if..." and "could I possibly...". These two aspects of my intellectual life are inseparable, and graduate study at FUN COLLEGE UNIVERSITY would feed the development of each.
+
+I'm drawn to FUN COLLEGE UNIVERSTITY because of the strength of its research in INTERESTING COMPUTER SUBTOPIC and OTHER ONE. Of particular fascination to me are the labs run by Profs. BIGGINS, HIGGINS, and WIGGUM, which all seek to tease information out of troves of data in their own ways.

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<style>
+body {
+  height: 2000px;
+}
+</style>
+<title>jQuery</title>
+<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+var n = 0;
+var animdone = true;
+var size = 50;
+
+$(window).scroll(function(){
+
+  if( n < size) {
+     $('body').append('<div>');
+     $('div:last').text(n); 
+     $('div:last').css('background-color', 'gray').css('width', '100px').css('height', '100px').css('margin', '2px');
+     n++;
+   }
+
+    if( $(window).scrollTop() + $(window).height() + 10 >= $(document).height() && animdone == true){
+       animdone = false;
+       $('body').animate({ scrollTop: 1 }, function(){ animdone = true; });
+    }
+});
+
+</script>
+</head>
+
+
+<body>
+<div id="maindiv">
+</div>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>mousemove demo</title>
+  <style>
+  div {
+      width: 160px;
+      height: 15px;
+
+      top:0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+
+	  text-align: center;
+	  vertical-align: middle;
+      margin: auto;
+  }
+  
+  p {
+    margin: 0;
+    margin-left: 10px;
+    color: red;
+    width: 220px;
+    height: 120px;
+    padding-top: 70px;
+    float: left;
+    font-size: 14px;
+  }
+  span {
+    display: block;
+  }
+  </style>
+  <script src="jquery-1.11.1.js"></script>
+	<script src="vector2.js"></script>
+</head>
+<body>
+ 
+<p>
+  <span>Move the mouse over the div.</span>
+  <span>&nbsp;</span>
+</p>
+<div><a href="www.youtube.com">click here</a></div>
+ 
+<script>
+// for tracking the mouse's movement and its distance from the link
+var prev_mouse = new point(0,0);
+var prev_dist = new point(0,0);
+// the link's position, initially in the center of the screen
+var link = new point(0,0);
+
+$( "html" ).mousemove(function( event ) {
+	
+	// mouse's current position and change in position
+	var mouse = new point(event.clientX, event.clientY);
+	var d_mouse = prev_mouse.pointTo(mouse);
+
+	// distance between mouse and link
+	var dist_ml = mouse.pointTo(link);
+	// angle of above; this is the direction the link wants to go
+	var flight_angle = dist_ml.heading();
+
+
+	// distance components between link and its nearest wall
+	if (dist_ml.x > 0) {var dist_lwX = $(window).width() - link.x}
+	else 							 {var dist_lwX = link.x};
+	if (dist_ml.y > 0) {var dist_lwY = $(window).height() - link.y}
+	else 							 {var dist_lwY = link.y};
+
+	// this is an upper bound on the link's distance from a wall
+	// (this is the distance from the link to its nearest corner);
+	var dist_lw = Math.sqrt(Math.pow(dist_lwX,2)+Math.pow(dist_lwY,2));
+
+
+	// this is the amount by which the link should move
+	var d_link = dist_lw * d_mouse / dist_ml;
+
+	// now the link's position is moved length 'd_link' in direction 'flight_angle'
+	link.plusEqPolar(d_link, flight_angle);
+
+	
+	
+	dist_lw = new point(dist_lwX, dist_lwY)
+	
+  prevX = "( " + link.x + ", " + link.y + " )";
+  prevY = "( " + dist_ml.x + ", " + dist_ml.y + " )";
+  $( "span:first" ).text( "prevX : " + prevX );
+  $( "span:last" ).text( "prevY : " + prevY );
+	
+	prev_mouse.copy(mouse)
+});
+</script>
+ 
+</body>
+</html>

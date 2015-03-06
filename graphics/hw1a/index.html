@@ -1,0 +1,62 @@
+<html>
+
+<head>
+<title>Drew's "hello, 3D"</title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+
+<link rel="stylesheet" type="text/css" href="./style.css">
+
+
+</head>
+
+
+<body onload="webGLStart();">
+
+		<!-- The actual body of the page contains only the webGL canvas -->
+    <canvas id="webGL-canvas" style="border: none;" width=1000 height=800 ></canvas>
+
+		
+		
+		
+		
+		
+		<!--Libraries-->
+		<script type="text/javascript" src="js/glMatrix-0.9.5.min.js"></script>
+		<script type="text/javascript" src="js/webgl-utils.js"></script>
+		<script type="text/javascript" src="js/jquery-1.11.2.min.js"></script>
+		
+		<!--My javascript files-->
+		<script type="text/javascript" src="js/script.js"></script>
+		<script type="text/javascript" src="js/shape.js"></script>
+		
+		<!--shader scripts-->
+		<script id="shader-fs" type="x-shader/x-fragment">
+		    precision mediump float;
+
+		    varying vec4 vColor;
+
+		    void main(void) {
+		        gl_FragColor = vColor;
+		    }
+		</script>
+
+		<script id="shader-vs" type="x-shader/x-vertex" src=>
+		    attribute vec3 aVertexPosition;
+		    attribute vec4 aVertexColor;
+
+		    uniform mat4 uMVMatrix;
+		    uniform mat4 uPMatrix;
+
+		    varying vec4 vColor;
+
+		    void main(void) {
+		        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+		        vColor = aVertexColor;
+		    }
+		</script>
+		
+		
+</body>
+
+</html>

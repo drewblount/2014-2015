@@ -1,0 +1,220 @@
+
+\documentclass[letterpaper]{report}
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+\newcommand{\X}{\mathbf{x}}
+\newcommand{\Y}{\mathbf{y}}
+\newcommand{\R}{\mathbf{R}}
+
+%\usepackage{natbib,alifeconf}
+\usepackage{natbib,amsmath}
+\usepackage[top=1.5in, bottom=1.5in, left=1.25in, right=1.25in]{geometry}
+
+% for the results table
+\usepackage{booktabs}
+\usepackage{multirow,bigstrut}
+\usepackage{tabu}
+
+\usepackage{palatino}
+\usepackage{pxfonts}
+
+
+%% Macros
+\newcommand{\mb}{\mathbf}
+
+%%
+
+
+
+\title{Sequential Model-Based Optimization\\ {\small \textit{-- of --}} \\Expensive Blackbox Functions}
+\author{Drew Blount \\
+\mbox{}\\
+Mathematics Department, Reed College\\
+\\
+dblount@reed.edu}
+
+\begin{document}
+\maketitle
+
+
+\chapter{The SMBO Paradigm}
+
+Sequential model-based optimization is an accurately named process, because it attempts to optimize objective functions by developing a sequence of models. The broad idea is this: you want to understand some process's global behavior from a few sample points, and you have a limited ability to collect more data--think of additional samples as available, but expensive to gather. This is often the case with processes that are difficult to observe or simulate.
+
+Given a few sample points, you use the available data to develop a model of the process's behavior.  With this model alone, you could perform simple \emph{model}-based optimization, using it to predict the locations of global optima. In \emph{sequential} model-based optimization, however, we use predictive models in a more clever, bootstrapping way: to predict what further data, if collected, would allow us to improve our model---and thus our predictive ability---the most. In other words, each model is used to generate another, better model. Global optima, or at least very good solutions, are then found by recursively improving the predictive ability of a model.
+
+To make this process more tangible, consider the case of gold-mining, which is a surprisingly deep analogy to the kind of data mining which is explored in this thesis. Imagine that you are a gold-miner, and you own a claim to Valley X. You want to understand where in the valley you could find the most gold, where best to start a mine. Your mining company has drilled five exploratory shafts throughout the valley. You make a map of the valley's gold distribution based on these five samples.
+
+Were you, the gold miner, only interested in model-based optimization, you would use this rudimentary map to predict where the most gold in the valley is, and start your mine there. Say, however, that you have enough resources to drill five more exploratory shafts first. The clever miner then asks themself, ``where could I drill the next exploratory shaft, to best learn about where the gold is most concentrated in the valley?" By leveraging what they have learned from the first five data points, the miner finds the region they would like most to learn about. After drilling the sixth hole in this region, the miner can improve their model of the gold distribution yet again, and ask the same question: ``where should I investigate next to find the most gold?'' The goal of this thesis is to automate this decision-making process.
+
+\section{History}
+
+[Just a few paragraphs here, talk first about actual kriging (which was done for gold) and maybe get a fun historical anecdote]
+
+[Talk about the EGO paper \citep{jones_efficient_1998}--Hutter calls it the beginning of SMBO, ``limited to optimizing continuous parameters for noise-free functions (i.e., the performance of deterministic algorithms).'' \cite[p.~509]{hutter_sequential_2011} See citation for further discussion of SMBO history. Talk about the background of EGO authors, how Jones worked for GM and one of the case studies in the original paper involved 3D engine component design.]
+
+Mention ``PDT$^{TM}$,'' ProtoLife's ``predictive design technology,'' which is illustrated by a figure very similar to Fig \ref{fig:smbo_cycle} \cite{protolife_pdt_2013}
+
+Talk about Hutter's recent work, maybe Google talk? Perhaps some words about how the ML community isn't particularly interested right now, and is more interested in accomplishing extremely huge-dimensional mapping problems like vision and translation, which are being accomplished by deep nets.
+
+
+\section{The SMBO Cycle}
+
+This thesis will explore several algorithms that are classified as sequential model-based optimizers \cite{hutter_sequential_2011, hamadi_autonomous_2012, jones_efficient_1998, rasmussen_gaussian_2006}. %note: get more specific with those cites. should be a handful of specific papers presenting particular SMBO things
+They differ in the space of model functions they explore, their assumptions regarding determinism, and their procedural relationship to the objective functions being optimized. % clarification: such as some algorithms selecting one sample point, others more.
+Nonetheless, they can all be roughly summarized by a three-part while loop,
+
+\begin{enumerate} \label{smbo_loop}
+\item the objective function is evaluated at some set of input points
+\item a working model of the objective function (the ``predictor function'') is generated from the evaluated input-output pairs
+\item new points are chosen to be evaluated by the objective function, so that the working model's utility in optimizing the objective function will be maximized.
+\end{enumerate}
+
+[note: should the above be in pseudocode? It would at least be nice to reference it like a figure.]
+
+The loop is run until results are satisfactory, or the expected improvement from further iterations falls below a user-defined threshold. Because of the circular, bootstrapping nature of the algorithm, it is tempting to illustrate it with a triangle like we see on recycling bins, as shown in Figure \ref{fig:smbo_cycle}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.5\textwidth]{EGO_cycle_v1}
+	\caption{the three iterated stages of the SMBO process}
+	\label{fig:smbo_cycle}
+
+\end{figure}
+
+Tho company ProtoLife uses a similar illustration to Fig. \ref{fig:smbo_cycle} to describe their analytical product, which appears to be a powerful research applications of SMBO \cite{protolife_pdt_2013}. The top node in the triangle is determined by each domain-specific application. Like ProtoLife, I am interested in trying several different model modules (the bottom-right node in the figure) to optimize different objective functions (the top-right node).
+
+[Hutter aslo includes in his introduction an image of a predictor function w/ expected improvement overlayed, like in Jones, right here]
+
+\section{Terms, Symbols}
+
+The function which we wish to optimize is the \emph{objective function}. The \emph{predictor} or \emph{model function} is that generated in each iteration of the \emph{SMBO loop} (or \emph{cycle}). 
+
+\emph{Sample points} are those points where we have evaluated the objective function--the points on which we base our model function. Throughout this thesis, I'll use several letters and symbols for specific concepts and indices. So that there is a definitive reference, I have listed them here (make this an official table/figure?).
+
+\begin{description}
+  \item[$n$]: the number of sample points
+  \item[$k$]: the dimensionality of input space
+  \item[$\X^{(i)}$]: the $i$th sample point (a $k$-vector)
+  \item[$\X$]: the vector of sample points ($n$ $k$-vectors, an $n\times k$ matrix)
+  \item[$y$]: the objective function
+  \item[$\hat{y}$]: the predictor function
+  \item[$\Y$]: the vector of evaluated outputs, i.e. $\Y_i=y(\X^{(i)})$
+\end{description}
+
+
+\chapter{Case study: the EGO Algorithm}
+
+The EGO algorithm is named for the paper in which it was presented, the informatively titled, ``Efficient Global Optimization of Expensive Blackbox Functions'' \citep{jones_efficient_1998}. I treat the EGO algorithm as the quintessential SMBO--it was the first, and it makes simple and intuitive assumptions about both the objective function and the best method to model it. [Kinda a lame explanation, but there has got to be more justification for treating EGO so centrally]. 
+
+\section{The DACE Predictor}
+The model that is sequentially fit in the EGO algorithm is known as the DACE predictor. Like EGO, the DACE acronym comes from a somewhat generally-titled paper, in this case, ``Design and Analysis of Computer Experiments'' \citep{sacks_design_1989}. [Might want to elaborate later. For now, here's the bare info:] The assumptions that the DACE predictor makes are these (following closely Jones et al's presentation of DACE \cite{jones_efficient_1998}):
+
+First, we assume what is called a \emph{stochastic process model} [get cites/explanation from Jones p.456], i.e., that,
+\begin{equation} \label{eq:stoch_proc}
+y(\X^{(i)}) = \mu + \epsilon(\X^{(i)}) \ \ \ \ \ \text{for } i \in (1,2,...,n).
+\end{equation}
+As is common in statistics, $\mu$ represents the mean of the process. Note that the above equation appears simpler than even linear regression, as it has no functional component. The DACE model, and stochastic processes in general, instead contains its predictive power in the `error terms' $\epsilon(\X^{(i)})$. These terms are assumed to be distributed normally,
+
+\begin{equation} \label{eq:dace_err}
+\epsilon(\X^{(i)}) = \text{Normal}(0,\sigma^2)\ \ \ \ \ \text{for } i \in (1,2,...,n),
+\end{equation}
+
+for a process-wide $\sigma^2$. Despite the normal distribution, the $\epsilon(\X^{(i)})$ are very much \emph{not} independent of each other: it is in a complex error-correlation structure that the DACE model encodes the contours of its response surface. Specifically,
+
+\begin{equation} \label{eq:dace_corr}
+\text{Corr}\left(\epsilon(\X^{(i)}),\epsilon(\X^{(i)})\right)\ \  = \ \ 
+	\text{Exp}
+		\left [ 
+			-\sum_{h=1}^{k} 
+				\theta_h \left | \X^{(i)}_h - \X^{(j)}_h \right | ^{p_h}
+		\right ]\ \  = \ \ 
+	\prod_{h=1}^{k}
+		\text{Exp}
+			\left [
+				-\theta_h \left | \X^{(i)}_h - \X^{(j)}_h \right | ^{p_h}
+			\right ],
+\end{equation}
+
+where the free parameters $\{(\theta_i,p_i)$ for $i \in (1,2,...,k)$ determine the shape of the DACE predictor. Much more can (and should, and will) be said about the shape of the predictor implied by this correlation equation, but for now it suffices to say that it encodes the heuristic, ``points near each other in input-space should have nearby function values'', with a concept of nearness along each input dimension that is gaussian in shape, with magnitude and falloff-steepness determined by $\theta$ and $p$.
+
+\subsection{Selection of $\{(\theta_i,p_i)\}$}
+To fit a DACE predictor to sample data, the $k+2$ free parameters $\mu, \sigma^2,$ and $\{(\theta_i,p_i)$ for $i \in (1,2,...,k)$ are set by maximizing the likelihood function which is implied by the prior assumptions \ref{eq:stoch_proc, dace_err, dace_corr}. 
+
+First, consider a set of independent gaussian random variables
+
+
+
+Recall the definition of correlation, that for random variables $a$ and $b$,
+
+\begin{equation} \label{eq:correlation}
+\text{Corr}(a,b) = \frac{E\left[ \left ( a - E(a) \right ) \left ( b - E(b) \right ) \right ]}{\sigma_a \sigma_b},
+\end{equation}
+
+where $E$ is the expected-value function. Now considering Eq. \ref{dace_err}, we have a simple equation for the correlation of two errors,
+
+\begin{equation} \label{eq:simp_corr}
+\text{Corr}(a,b) = \frac{E\left[\epsilon(\X^{(i)})\epsilon(\X^{(i)})\right]}{\sigma^2}
+\end{equation}
+
+From here, you can derive the likelihood equation, 
+
+\begin{equation} \label{eq:likelihood}
+\frac{1}
+  {(2\pi\sigma^2)^{n/2}|\mb{R}|^\frac{1}{2}}\ 
+exp \left 
+  [ -\frac
+    {(\mb{y}-\mb{1}\mu)'\mb{R}^{-1}(\mb{y}-\mb{1}\mu)}
+    {2\sigma^2} 
+\right ].
+\end{equation}
+
+If we fix the $\{(\theta_i,p_i)$, the above equation can be analytically maximized in $\mu$ and $\sigma^2$ \citep{jones_efficient_1998} to get,
+
+\begin{equation} \label{eq:mu_hat}
+\hat{\mu}=\frac
+	{\mb{1}'\mb{R}^{-1}\mb{y}}
+	{\mb{1}'\mb{R}^{-1}\mb{1}},
+\end{equation}
+
+
+and,
+
+\begin{equation} \label{eq:sig_hat}
+\hat{\sigma}^2=\frac
+	{(\mb{y}-\mb{1}\hat{\mu})'\mb{R}^{-1}(\mb{y}-\mb{1}\hat{\mu})}
+	{n}.
+\end{equation}
+
+Plugging Eqs \ref{eq:mu_hat, eq:sig_hat} into Eq. \ref{eq:likelihood}, gives the concentrated likelihood function that is numerically optimized to fit the parameters $p$ and $\theta$ to a given dataset.
+
+
+
+\chapter{Implementation}
+
+\section{Visual Examples with EGO}
+\subsection{1D}
+--I've already made the software for this. Narrate a few examples. Probably a one-page grid of figures showing initial sample points, selection of next points, update of the model, etc.
+
+\subsection{2D}
+--Perhaps the Branin function shown in the original Jones paper? the same grid would be good to look at in 2D.
+
+\section{Performance Tests}
+
+--Optimize a SAT solver
+
+--Compare to other optimizers and perhaps SMBOs besides EGO
+
+--Maybe use a neural net model function?? (how do we measure expected improvement--how does Norman?)
+
+--Here is where I'll dump all of my time for the rest of March once I'm done with the example implementations.
+
+
+\bibliographystyle{apalike}
+\bibliography{thesis}
+
+
+\end{document}
+
+
+

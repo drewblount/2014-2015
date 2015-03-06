@@ -37,6 +37,9 @@ class egoist:
         # number of evaluated points
         self.n = len(self.X)
         
+        # nearzero values for Q parameters lead to singular matrices, hence
+        self.eps = 1e-2
+        
         
         ## temporary: regression parameters are initialized at default values
         ## (should eventually be chosen by max. likelihood)
@@ -149,16 +152,39 @@ class egoist:
     # param_range is a series of parenthesized min/max tuples:
     # ((P[0]min,P[0]max),...(Q[n-1]min,Q[n-1]max))
     # note that None is a valid upper/lower bound
-    
-    # WARNING: MIGHT ONLY WORK FOR 1D (because of )
-    def max_likelihood(self, param_range=((1.0,2.0),(0.01,None)), verbose=False):
+    ''' 
+    # works in 1d but WARNING: MIGHT ONLY WORK FOR 1D (because of )
+    def max_likelihood(self, param_range=((1.0,2.0),(1e15,None)), verbose=False):
         
         # the function to be minimized. note that P is the first half of z, Q the second
         def neg_conc(z): return (-1 * self.conc_likelihood(z[:self.k],z[self.k:]))
         z0 = self.P + self.Q
         res = minimize(neg_conc, z0, method='L-BFGS-B',bounds=param_range)
         return res
+      
+    
+    # Sets P and Q so as to maximize the above likelihood function
+    # bounds is a tuple of  min/max tuples:
+    # ( (P[0]min,P[0]max), (P[1]min,P[1]max), ..., (Q[n-1]min,Q[n-1]max) )
+    # note that None is a valid upper/lower bound on one dimension, but if bounds=None
+    # a default will be used
+    # eps is included because having a lower bound of 0 leads to singular matrices
+    ''' 
+    def max_likelihood(self, bounds=None, verbose=False):
         
+        # default parameter range is each p from 1 to 2, each q > 0
+        if not bounds:
+            p_bounds = [(1,2) for _ in range(self.k)]
+            q_bounds = [(self.eps,None) for _ in range(self.k)]
+            bounds = tuple(p_bounds+q_bounds)
+            print('bounds = ' + str(bounds))
+        
+        # the function to be minimized. note that P is the first half of z, Q the second
+        def neg_conc(z): return (-1 * self.conc_likelihood(z[:self.k],z[self.k:]))
+        z0 = self.P + self.Q
+        res = minimize(neg_conc, z0, method='L-BFGS-B',bounds=bounds)
+        return res
+       
     
     # the so-called best linear unbiased predictor,  Jones Eq. 7
     def predict(self, x_new):
@@ -249,7 +275,10 @@ class egoist:
         
     # Performs the above, with sliders to manipulate P and Q
     # show expected improvement
-    def plot1d_sliders(self, x_min=0.0, x_max=5.0, x_delta=0.01, y_min=0.0, y_max=1.0, P_min=1.0,P_max=2.0,Q_min=0.1,Q_max=10.0):
+    def plot1d_sliders(self, x_min=0.0, x_max=5.0, x_delta=0.01, y_min=0.0, y_max=1.0, P_min=1.0,P_max=2.0,Q_min=None,Q_max=10.0):
+        
+        # cludge b/c default Q_min can't be a feature of self
+        if not Q_min: Q_min = self.eps
         
         fig, ax = plt.subplots()
         plt.subplots_adjust(left=0.25, bottom=0.25)
