@@ -194,7 +194,7 @@ function resizeCanvas() {
 
 var cubit = new Shape(cubeV, cubeF);
 cubit.setRandomGreyscale();
-console.log('cubit is a ' + cubit.verbose());
+//console.log('cubit is a ' + cubit.verbose());
 
     
 
@@ -209,10 +209,20 @@ jQuery.get(icos_fname, function(data) {
     icos_string = data.toString();
 }).done(function(){
     icos = fromOBJ_string(icos_string);
+    //console.log('icos is a ' + icos.verbose());
+    //icos.test_decompose();
     icos.split_verts();
     icos.setRandomGreyFaces();
-    console.log('icos is a ' + icos.verbose());
-    console.log('the centroid of icos is ' + icos.find_centroid());
+    var ico = icos.clone();
+
+    icos.smoothen();
+    icos.smoothen();
+
+    icos.split_verts();
+    icos.setRandomGreyFaces();
+    //
+    //console.log('the centroid of icos is ' + icos.find_centroid());
+    //icos = ico;
     icos.initBuffs(gl);
     drawIcos=true;
 });

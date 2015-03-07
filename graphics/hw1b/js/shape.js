@@ -65,38 +65,31 @@ var get_OBJ_string = function(fname, saveStr) {
 // vertex index (when describing a face), because some .obj files use
 // 1-first indexing rather than 0-first
 var fromOBJ_string = function(fstring, fix_index) {
-        if (typeof(fix_index) === 'undefined') {var fix_index = true};
-        var lines = fstring.split('\n');
-        var vertices = [];
-        var faces = [];
-        // adds vertices and faces, and ignores all else for now
-        for( i=0; i<lines.length; i++ ){
-            var words = lines[i].split(/[ ,]+/); //regexp for any num of commas/spaces
-            var firstLetter = words[0][0];
-            if (firstLetter == 'v' || firstLetter == 'V') {
-                var vect = [];
-                for( j=1;j<words.length;j++ ){
-                    vect[j-1] = parseFloat(words[j]);    
-                }
-                vertices.push(vect);
-            } else if (firstLetter == 'f' || firstLetter == 'F') {
-                var fac = [];
-                for( j=1;j<words.length;j++ ){
-                    if (fix_index) {fac[j-1] = parseInt(words[j]) - 1}
-                    else {          fac[j-1] = parseInt(words[j])};
-                }
-                faces.push(fac);
+    if (typeof(fix_index) === 'undefined') {var fix_index = true};
+    var lines = fstring.split('\n');
+    var vertices = [];
+    var faces = [];
+    // adds vertices and faces, and ignores all else for now
+    for( i=0; i<lines.length; i++ ){
+        var words = lines[i].split(/[ ,]+/); //regexp for any num of commas/spaces
+        var firstLetter = words[0][0];
+        if (firstLetter == 'v' || firstLetter == 'V') {
+            var vect = [];
+            for( j=1;j<words.length;j++ ){
+                vect[j-1] = parseFloat(words[j]);    
             }
-        };
-        var out = new Shape(vertices, faces);
-        console.log('out is a ' + out);
-        
-        //console.log('inner: '+out.V);
-        icos = out;
-        return out;
-    console.log('out2 is a ' + out2);
-
-    return out2;
+            vertices.push(vect);
+        } else if (firstLetter == 'f' || firstLetter == 'F') {
+            var fac = [];
+            for( j=1;j<words.length;j++ ){
+                if (fix_index) {fac[j-1] = parseInt(words[j]) - 1}
+                else {          fac[j-1] = parseInt(words[j])};
+            }
+            faces.push(fac);
+        }
+    };
+    var out = new Shape(vertices, faces);
+    return out;
 };
 
 
@@ -135,9 +128,72 @@ Shape.prototype.find_centroid = function() {
 
 
 // for decomposing the icos to a sphere:
-// takes a face in a shape, and sierpinski-style makes it into four faces (adding vertices as necessary). Each new vertex is scaled radially so that its distance from the centroid is r
-Shape.prototype.decompose_with_centroid
+// takes a face in a shape, and sierpinski-style makes it into four faces (adding vertices as necessary). Each new vertex is scaled radially so that its distance from p is either fix_dist (optional param) or the average of the distances the two vertices it interpolates.
+// for non-triangular faces, this algorithm inscribes a copy of that face's shape by drawing lines between each midpoint on its edge.
+Shape.prototype.decompose_face_point = function(face_id, p, fix_dist) {
+    var new_vs = [];
+    var v1, v2, next_i, new_vec;
+    var face = this.F[face_id];
+    console.log('face = ' + face);
+    // for each line on the face, find the vertex on that midpoint, scale that vertex relative p, and add it to new_vs
+    for(j=0;j<face.length;j++){
+        var next_v = face[(j+1)%face.length];
+        var mid_v = midpoint(this.V[face[j]],this.V[next_v]);
+        if(fix_dist){
+            new_vec = set_v1_rel_v2(mid_v,p,fix_dist);
+        } else {
+            var dist = 0.5*(dist_between(this.V[face[j]],p)+dist_between(this.V[next_v],p));
+            new_vec = set_v1_rel_v2(mid_v,p,dist);
+        }
+        console.log('new_vec =  ' + new_vec);
+        new_vs.push(new_vec);
+    }
 
+    // new_vs now contains all the midpoints: time to add the new faces
+    // First add all the newfound vertices to V, and remember their indices for easy use
+    var new_V_ids = []
+    for(i=0;i<new_vs.length;i++){
+        new_V_ids.push(this.V.length+i)   
+    }
+    this.V = this.V.concat(new_vs);
+    console.log('new_vs =  ' + new_vs);
+    // remember 
+    
+    // for each vertex on the old face, make a new face with that vertex and its two new neighbors (maintains handedness)
+    var new_face = [face[0],new_V_ids[0],new_V_ids[new_V_ids.length-1]];
+    this.F.push(new_face);
+    for(i=1;i<face.length;i++){
+        console.log('added a face here');
+        var new_face = [face[i],new_V_ids[i],new_V_ids[i-1]];
+        this.F.push(new_face);
+    }    
+    // i love this trick: the array of new_V_ids is identical to a face describing the inner triangle in the sierpinsky step
+    this.F.push(new_V_ids);
+    
+    // final step: removes the old face (this step might make things real slow if there are tons of faces?)
+
+}
+
+// performs the above function on every face, using the centroid as an origin. If is_regular, assumes a fixed
+// distance from the centroid
+Shape.prototype.smoothen = function(is_regular) {
+    var centroid = this.find_centroid();
+    if(is_regular){
+        var fixed_dist = dist_between(centroid,this.V[0])
+    } else {
+        var fixed_dist = false
+    };
+    var old_length = this.F.length;
+    for(f_id=0;f_id<old_length;f_id++) {
+        this.decompose_face_point(f_id, centroid, fixed_dist);
+    }
+}
+
+Shape.prototype.test_decompose = function() {
+    var p = this.find_centroid();
+    var dist = dist_between(this.V[0],p);
+    this.decompose_face_point(0,p,dist);
+}
 
 
 // Shape.color should be a flat array of rgba values (4 array entries) for each vertex
@@ -181,6 +237,10 @@ Shape.prototype.setRandomGreyFaces = function() {
     }
 };
 
+// clones the shape. taken from John Resig's great answer to http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-clone-an-object
+Shape.prototype.clone = function() {
+    return jQuery.extend(true, {}, this);   
+}
 
 
 Shape.prototype.getInfo = function() {
@@ -196,7 +256,7 @@ Shape.prototype.valueOf = function() {
 };
 
 Shape.prototype.verbose = function() {
-	var outS = "VERTICES:\n";
+	var outS = this.toString() + '\nVERTICES:\n';
 	for (i=0;i<this.V.length;i++){
 		outS = outS.concat(String(this.V[i])+',\n');
 	}
