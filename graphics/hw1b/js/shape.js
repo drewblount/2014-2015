@@ -25,8 +25,6 @@ function Shape (vertices, faces) {
 }
 
 // LOAD SHAPE FROM OBJ: allows plain names, name.obj (assumed to be in the same directory as index.html), or full web link starting with http
-
-
 var OBJ_name_parse = function(fname) {
     fullname = fname;
     if (fname.substring(fname.length-4,fname.length) != '.obj') {
@@ -41,23 +39,6 @@ var OBJ_name_parse = function(fname) {
     return fullname
 }
 
-
-// how do I make the output of this function the output of the callback function
-// below??
-
-var get_OBJ_string = function(fname, saveStr) {
-    fullname = OBJ_name_parse(fname);
-    var ret = $.get(fullname, function(data) {
-        saveStr = data.toString();
-        icos_string = saveStr;
-        console.log('in ret saveStr = ' + saveStr);
-        return 6
-        
-    })
-    console.log('ret = ' + ret);
-}
-
-// region
 
 // in efforts to isolate the asynchronous ajax section of the code:
 // fstring is expected to be the OBJ file contents in string form
@@ -134,7 +115,6 @@ Shape.prototype.decompose_face_point = function(face_id, p, fix_dist) {
     var new_vs = [];
     var v1, v2, next_i, new_vec;
     var face = this.F[face_id];
-    console.log('face = ' + face);
     // for each line on the face, find the vertex on that midpoint, scale that vertex relative p, and add it to new_vs
     for(j=0;j<face.length;j++){
         var next_v = face[(j+1)%face.length];
@@ -145,7 +125,6 @@ Shape.prototype.decompose_face_point = function(face_id, p, fix_dist) {
             var dist = 0.5*(dist_between(this.V[face[j]],p)+dist_between(this.V[next_v],p));
             new_vec = set_v1_rel_v2(mid_v,p,dist);
         }
-        console.log('new_vec =  ' + new_vec);
         new_vs.push(new_vec);
     }
 
@@ -156,14 +135,12 @@ Shape.prototype.decompose_face_point = function(face_id, p, fix_dist) {
         new_V_ids.push(this.V.length+i)   
     }
     this.V = this.V.concat(new_vs);
-    console.log('new_vs =  ' + new_vs);
     // remember 
     
     // for each vertex on the old face, make a new face with that vertex and its two new neighbors (maintains handedness)
     var new_face = [face[0],new_V_ids[0],new_V_ids[new_V_ids.length-1]];
     this.F.push(new_face);
     for(i=1;i<face.length;i++){
-        console.log('added a face here');
         var new_face = [face[i],new_V_ids[i],new_V_ids[i-1]];
         this.F.push(new_face);
     }    

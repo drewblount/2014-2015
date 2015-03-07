@@ -225,6 +225,15 @@ jQuery.get(icos_fname, function(data) {
     //icos = ico;
     icos.initBuffs(gl);
     drawIcos=true;
+    
+    $(window).keydown(function(event){
+        if(event.keyCode == 32) {
+	       alert('space bar');
+        }
+    });
+ 
+    
+    
 });
 
 
