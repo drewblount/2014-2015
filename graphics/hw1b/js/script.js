@@ -134,9 +134,10 @@ function drawScene() {
     mvPushMatrix();
     mat4.rotate(mvMatrix, degToRad(r2), [1, 1, 1]);
 	//cubit.drawShape(gl);
-    if (drawIcos) {
-        icos.drawShape(gl);
-    }
+    if (draw_shape) {
+        shape_arr[current_shape].drawShape(gl);
+    };
+
 
     mvPopMatrix();
 	
@@ -184,7 +185,7 @@ function webGLStart() {
 function resizeCanvas() {
    // only change the size of the canvas if the size it's being displayed has changed.
 	var width = $(window).width();
-	var height = $(window).height();
+	var height = $(window).height()-2*($('div').outerHeight());
 	
    if (canvas.width != width || canvas.height != height) {
 	   canvas.width = width;
@@ -201,41 +202,73 @@ cubit.setRandomGreyscale();
 
 // is this good practice?
 var icos_fname = OBJ_name_parse('icosahedron');
-var drawIcos = false;
 
-var icos_string, icos;
 // the shape can only be handled as a callback from loading the .obj file, because file loads are by default asynchronous (no function outside of the .done callback can assume that the original .obj file was ever loaded)
-jQuery.get(icos_fname, function(data) {
-    icos_string = data.toString();
+var max_depth=3;
+var draw_shape;
+var shape_arr = [];
+var current_shape = 0;
+function smoothHandleShape(fname) {
+    $.get(fname, function(data) {
+    shape_string = data.toString();
 }).done(function(){
-    icos = fromOBJ_string(icos_string);
-    //console.log('icos is a ' + icos.verbose());
-    //icos.test_decompose();
-    icos.split_verts();
-    icos.setRandomGreyFaces();
-    var ico = icos.clone();
-
-    icos.smoothen();
-    icos.smoothen();
-
-    icos.split_verts();
-    icos.setRandomGreyFaces();
-    //
-    //console.log('the centroid of icos is ' + icos.find_centroid());
-    //icos = ico;
-    icos.initBuffs(gl);
-    drawIcos=true;
+        // load the shape object from the string and initialize it
+    var shape = fromOBJ_string(shape_string);
+    shape.split_verts();
+    shape.setIncrementalGreyFaces();
+    console.log('this.V[0]= '+shape.V[0]);
+    shape.scale(2);
+    shape.initBuffs(gl);
+    shape_arr.push(shape.clone());
+    draw_shape=true;
     
-    $(window).keydown(function(event){
-        if(event.keyCode == 32) {
-	       alert('space bar');
+    var rand_colors = false;
+    function increase_smooth() {
+        current_shape++;
+        // if the smoother shape has not been generated yet make it
+        if(current_shape==shape_arr.length){
+            shape.smoothen();
+            shape.split_verts();
+            if (rand_colors) { 
+                shape.setRandomGreyFaces();
+            } else { 
+                shape.setIncrementalGreyFaces()};
+            shape.initBuffs(gl);
+            shape_arr.push(shape.clone());
         }
+    }
+        
+    $('#smooth_button').click(function(event){
+        if(current_shape<max_depth){increase_smooth(shape)}
     });
- 
     
-    
-});
+    $('#unsmooth_button').click(function(event){
+        if(current_shape>0){current_shape--};
+    });
+    $('#patch_col').click(function(event){
+        shape.setIncrementalGreyFaces();
+        shape.initBuffs(gl);
+        shape_arr[current_shape]=shape.clone();
+    });
+    $('#rand_col').click(function(event){
+        shape.setRandomGreyFaces();
+        shape.initBuffs(gl);
+        shape_arr[current_shape]=shape.clone();
+    });
 
+        
+        // generates smoother versions of the shape
+    $(window).keydown(function(event){
+        // if right arrow make smoother
+        if(event.keyCode == 39 && current_shape<max_depth) {
+            increase_smooth(shape);
+        } // if left arrow make sharper
+        if(event.keyCode == 37 && current_shape>0) {
+            current_shape--;
+        }
+    });    
+})};
 
+smoothHandleShape(icos_fname);
 
 

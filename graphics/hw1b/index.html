@@ -4,7 +4,7 @@
 <title>Drew's "hello, 3D"</title>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
-
+<link rel="stylesheet" type="text/css" href="./bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="./style.css">
 
 
@@ -14,12 +14,23 @@
 <body onload="webGLStart();">
 
 		<!-- The actual body of the page contains only the webGL canvas -->
+    <div class="button_holder text-center">
+    <button type="button" class="btn btn-default" id="unsmooth_button">sharpen</button>
+    <button type="button" class="btn btn-default" id="smooth_button">smoothen</button>
+
+    </div>
+
     <canvas id="webGL-canvas" style="border: none;" width=1000 height=800 ></canvas>
 
 		
 		
 		
-		
+    <div class="button_holder text-center">
+    <button type="button" class="btn btn-default" id="rand_col">random colors</button>
+    <button type="button" class="btn btn-default" id="patch_col">color patches</button>
+
+    </div>
+
 		
 		<!--Libraries-->
 		<script type="text/javascript" src="js/glMatrix-0.9.5.min.js"></script>

@@ -135,8 +135,7 @@ Shape.prototype.decompose_face_point = function(face_id, p, fix_dist) {
         new_V_ids.push(this.V.length+i)   
     }
     this.V = this.V.concat(new_vs);
-    // remember 
-    
+
     // for each vertex on the old face, make a new face with that vertex and its two new neighbors (maintains handedness)
     var new_face = [face[0],new_V_ids[0],new_V_ids[new_V_ids.length-1]];
     this.F.push(new_face);
@@ -148,7 +147,7 @@ Shape.prototype.decompose_face_point = function(face_id, p, fix_dist) {
     this.F.push(new_V_ids);
     
     // final step: removes the old face (this step might make things real slow if there are tons of faces?)
-
+    // ignored for now, because the new faces cover up the old anyway
 }
 
 // performs the above function on every face, using the centroid as an origin. If is_regular, assumes a fixed
@@ -214,6 +213,30 @@ Shape.prototype.setRandomGreyFaces = function() {
     }
 };
 
+Shape.prototype.setIncrementalGreyFaces = function() {
+	var l; //for lightness
+    var colorObj = {};
+    this.color = [];
+    var step = 0.8/this.F.length;
+	for(i=0;i<this.F.length;i++){
+		l = 0.1+step*i;
+		var f = this.F[i];
+        for(j=0;j<f.length;j++){
+            if(colorObj[f[j]] === undefined){colorObj[f[j]] = [l,l,l,1]}; 
+        }
+	}
+    // now copy the dictionary to an array
+    for(i=0;i<this.V.length;i++){
+        //this.color = this.color.concat(colorObj[i]);
+        if(colorObj[i] !== undefined){
+            this.color = this.color.concat(colorObj[i]);
+        } else { // in case a vertex isn't in any face
+            this.color = this.color.concat([l,l,l,1]);
+        }
+    }
+};
+
+
 // clones the shape. taken from John Resig's great answer to http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-clone-an-object
 Shape.prototype.clone = function() {
     return jQuery.extend(true, {}, this);   
@@ -259,6 +282,12 @@ function flatten(twoDarray){
 	});
 };
 
+// scales the vertices in the shape
+Shape.prototype.scale = function(s) {
+    for(v_id=0;v_id<this.V.length;v_id++){
+        this.V[v_id]=scale_vec(this.V[v_id],s);
+    }
+}
 
 // Aimed to recreate the functionality of the initBuffers() function. takes a gl instance argument
 Shape.prototype.initBuffs = function(gl) {
