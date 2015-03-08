@@ -1,7 +1,7 @@
 <html>
 
 <head>
-<title>icosahedron-to-sphere machine</title>
+<title>move the light</title>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
 <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
@@ -15,9 +15,13 @@
 
 		<!-- The actual body of the page contains only the webGL canvas -->
     <div class="button_holder text-center">
-    <button type="button" class="btn btn-default" id="unsmooth_button" style='font-size:large'>sharpen</button>
-    <button type="button" class="btn btn-default" id="smooth_button" style='font-size:large'>smoothen</button>
-
+        <p>move the light source:</p>
+    <button type="button" class="btn btn-default" id="minus_x" style='font-size:large'>-x</button>
+    <button type="button" class="btn btn-default" id="plus_x" style='font-size:large'>+x</button>
+    <button type="button" class="btn btn-default" id="minus_y" style='font-size:large'>-y</button>
+    <button type="button" class="btn btn-default" id="plus_y" style='font-size:large'>+y</button>
+    <button type="button" class="btn btn-default" id="minus_z" style='font-size:large'>-z</button>
+    <button type="button" class="btn btn-default" id="plus_z" style='font-size:large'>+z</button>
     </div>
 
     <canvas id="webGL-canvas" style="border: none;" width=1000 height=800 ></canvas>
@@ -25,11 +29,6 @@
 		
 		
 		
-    <div class="button_holder text-center">
-    <button type="button" class="btn btn-default" id="rand_col" style='font-size:large'>random colors</button>
-    <button type="button" class="btn btn-default" id="patch_col" style='font-size:large'>color patches</button>
-
-    </div>
 
 		
 		<!--Libraries-->
@@ -39,6 +38,7 @@
 		<!--My javascript files-->
         <script type="text/javascript" src="js/vector_alg.js"></script>
         <script type="text/javascript" src="js/shape.js"></script>
+        <script type="text/javascript" src="js/plane_and_shadow.js"></script>
 		<script type="text/javascript" src="js/script.js"></script>
 		
 		<!--shader scripts-->

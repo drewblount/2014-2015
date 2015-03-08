@@ -109,12 +109,6 @@ function degToRad(degrees) {
 
 // everything from here on was written or heavily modified by me
 
-
-// angles of rotation for different shapes
-var r1 = 0;
-var r2 = 0;
-var r3 = 0;
-
 function drawScene() {
 	resizeCanvas();
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
@@ -123,28 +117,22 @@ function drawScene() {
 	// gives a nice perspective
     // 2/18/15:: I don't quite understand what's up here
     mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
-
     mat4.identity(mvMatrix);
 
-	// moves to position to draw first shape, rotates and draws it.
+    floor_shape.drawShape(gl);
+    
+	// honestly this translation is a relic from old code, and all of my later positions are relative to it so I haven't fixed it
+    mat4.translate(mvMatrix, [0.0, 0.3, -3]);
 
-	// now draw two more cubes farther back
-    mat4.translate(mvMatrix, [0.0, 0.0, -10.0]);
-    //if(drawIcos){icos.drawShape(gl)};
-    mvPushMatrix();
-    mat4.rotate(mvMatrix, degToRad(r2), [1, 1, 1]);
-	//cubit.drawShape(gl);
     if (draw_shape) {
-        shape_arr[current_shape].drawShape(gl);
-    };
-
-
-    mvPopMatrix();
-	
+        shape.drawShape(gl);
+        shad_shape.drawShape(gl);
+    };	
 
 }
 
 // animate uses Date().getTime() to ensure that animated movement happens at a regular speed independent of framerate.
+var r1,r2,r3;
 var lastTime = 0;
 function animate() {
     var timeNow = new Date().getTime();
@@ -173,8 +161,9 @@ function webGLStart() {
 	resizeCanvas();
     initGL(canvas);
     initShaders();
-	cubit.initBuffs(gl);	
-
+    // gets ready to draw the floor plane
+	floor_shape.initBuffs(gl);
+    
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
 
@@ -185,7 +174,7 @@ function webGLStart() {
 function resizeCanvas() {
    // only change the size of the canvas if the size it's being displayed has changed.
 	var width = $(window).width();
-	var height = $(window).height()-2*($('div').outerHeight());
+	var height = $(window).height()-($('div').outerHeight());
 	
    if (canvas.width != width || canvas.height != height) {
 	   canvas.width = width;
@@ -193,79 +182,111 @@ function resizeCanvas() {
    }
 }
 
+
 var cubit = new Shape(cubeV, cubeF);
 cubit.setRandomGreyscale();
 //console.log('cubit is a ' + cubit.verbose());
 
     
 // the shape can only be handled as a callback from loading the .obj file, because file loads are by default asynchronous (no function outside of the .done callback can assume that the original .obj file was ever loaded)
-var max_depth=3;
+var max_depth=4;
 var draw_shape;
 var shape_arr = [];
 var current_shape = 0;
+var shape;
+var shad_shape;
+
+var floor_y = -0.6
+var floor_shape = floor_shape(8,floor_y,16);
+
+var light_source = [-0.5,50,-50]
+
 function smoothHandleShape(fname) {
     $.get(fname, function(data) {
     shape_string = data.toString();
 }).done(function(){
         // load the shape object from the string and initialize it
-    var shape = fromOBJ_string(shape_string);
+    shape = fromOBJ_string(shape_string);
+    // before complexifying the shape at all, generate its shadow
+    shad_shape = shape.plane_shadow(light_source,floor_y);
+    console.log('shad_shape = '+shad_shape.verbose());
+    shad_shape.initBuffs(gl);
+    
     shape.split_verts();
-    shape.setIncrementalGreyFaces();
-    shape.scale(2);
+    shape.setRandomGreyFaces();
+    shape.scale(0.6);
     shape.initBuffs(gl);
     shape_arr.push(shape.clone());
     draw_shape=true;
     
     var rand_colors = false;
-    function increase_smooth() {
-        current_shape++;
-        // if the smoother shape has not been generated yet make it
-        if(current_shape==shape_arr.length){
-            shape.smoothen();
-            shape.split_verts();
-            if (rand_colors) { 
-                shape.setRandomGreyFaces();
-            } else { 
-                shape.setIncrementalGreyFaces()};
-            shape.initBuffs(gl);
-            shape_arr.push(shape.clone());
-        }
+    // for moving the light around: can use four buttons or the arrow keys
+    // [dx,dy,dz] for light movement
+    var d_xyz = [5,5,10]
+    function move_light(dx,dy,dz) {
+        light_source=add_vec(light_source,[dx,dy,dz]);
+        shad_shape = shape.plane_shadow(light_source,floor_y);
+        shad_shape.initBuffs(gl);
     }
-        
-    $('#smooth_button').click(function(event){
-        if(current_shape<max_depth){increase_smooth(shape)}
-    });
-    
-    $('#unsmooth_button').click(function(event){
-        if(current_shape>0){current_shape--};
-    });
-    $('#patch_col').click(function(event){
-        rand_colors=true;
-        shape_arr[current_shape].setIncrementalGreyFaces();
-        shape_arr[current_shape].initBuffs(gl);
-        shape_arr[current_shape]=shape.clone();
-    });
-    $('#rand_col').click(function(event){
-        rand_colors=true;
-        shape.setRandomGreyFaces();
-        shape.initBuffs(gl);
-        shape_arr[current_shape]=shape.clone();
-    });
 
-        
-        // generates smoother versions of the shape
+    function x_plus() {
+        move_light(d_xyz[0],0,0);
+    }
+    function x_minus() {
+        move_light(-d_xyz[0],0,0);
+    }
+    function y_plus() {
+        move_light(0,d_xyz[1],0);
+    }
+    function y_minus() {
+        move_light(0,-d_xyz[1],0);
+    }
+
+    function z_plus() {
+        move_light(0,0,d_xyz[2]);
+    }
+    function z_minus() {
+        move_light(0,0,-d_xyz[2]);
+    }
+    $('#minus_x').click(function(event){
+        x_minus();
+    });
+    $('#plus_x').click(function(event){
+        x_plus();
+    });
+    $('#minus_y').click(function(event){
+        y_minus();
+    });
+    $('#plus_y').click(function(event){
+        y_plus();
+    });
+    $('#minus_z').click(function(event){
+        z_minus();
+    });
+    $('#plus_z').click(function(event){
+        z_plus();
+    });
+    // also have arrow-key control
     $(window).keydown(function(event){
-        // if right arrow make smoother
-        if(event.keyCode == 39 && current_shape<max_depth) {
-            increase_smooth(shape);
-        } // if left arrow make sharper
-        if(event.keyCode == 37 && current_shape>0) {
-            current_shape--;
+        if(event.keyCode == 37) {
+            x_minus();
         }
-    });    
-})};
+        if(event.keyCode == 39) {
+            x_plus();
+        }
+        if(event.keyCode == 40) {
+            z_minus();
+        }
+        if(event.keyCode == 38) {
+            z_plus()
+        }
+    })
+    }
+    )
+};
+    
 
-var shape_fname = OBJ_name_parse('');
+var shape_fname = OBJ_name_parse('icosahedron');
 console.log('shape_fname = ' + shape_fname);
 smoothHandleShape(shape_fname);
 

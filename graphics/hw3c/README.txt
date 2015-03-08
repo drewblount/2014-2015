@@ -1,0 +1,3 @@
+File layout: index.html is the main deal, with all my javascrip files in the js/ subdirectory. script.js is essentially my "main", and I wrote shape.js, vector_alg.js, and plane_and_shadow.js.
+
+A simple shadow implementation: an icosahdron (loaded from hw3c/icosahedron.obj) floats above a plane, which is simply a 2-face shape described by plane_and_shadow.js->floor_shape. The icosahedron's shadow is manually calculated by projecting each of its vertices onto the plane, using plane_and_shadow.js->point_plane_proj and plane_and_shadow.js->Shape.prototype.plane_shadow, whish is a class method of the Shape class defined in shape.js
