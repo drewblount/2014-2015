@@ -33,6 +33,7 @@ for _ in range(10):
 '''
 
 E.max_likelihood()
+print('P = '+str(E.P) +'\nQ = '+str(E.Q))
 E.plot1d_sliders()
 
 # makes sure that lazyprops are deleted

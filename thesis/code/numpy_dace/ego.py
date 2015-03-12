@@ -18,12 +18,17 @@ log = logging.getLogger('ego.log')
 # certain matrix operations. also imports a lazyprop-deleter
 from lazyprop import lazyprop, reset_lps
 
+# func_handler contains tools for the communication between an EGO optimizer instance and an objective function
+import func_handler
+
+
 class egoist:
     
     ## The solver is initialized by passing it the starting
     ## inputs and outputs.
-    ## X's type: 2d array of input vectors. Y is a 1d array of outputs
-    def __init__(self, X0=[[]], Y0=[], logger=None):
+    ## X's type: 2d array of input k-vectors. Y is a 1d array of outputs. 
+    ## F is a k-to-1-dimensional function (sin_plus_quad)
+    def __init__(self, X0=[[]], Y0=[], F = func_handler.sin_plus_quad(), logger=None):
         
         self.log = logger or logging.getLogger(__name__)
         logging.basicConfig(filename='ego.log', level=logging.INFO)
@@ -57,6 +62,10 @@ class egoist:
             print ('Y = ' + str(E.Y))
         # have to reset lazy properties
         reset_lps(self)
+        
+    # samples the function f at the new point and saves the result to data
+    def sample_point(self, f, x_new,verbose=False):
+        self.addpoint(x_new, f(x_new),verbose)
         
     # distance in input-space (x1 is an array; an input vector)
     def dist(self, x1, x2):
@@ -182,6 +191,12 @@ class egoist:
         def neg_conc(z): return (-1 * self.conc_likelihood(z[:self.k],z[self.k:]))
         z0 = self.P + self.Q
         res = minimize(neg_conc, z0, method='L-BFGS-B',bounds=bounds)
+        # now save the output to P and Q, and reset lazyprops
+        self.P = res.x[:self.k]
+        self.Q = res.x[self.k:]
+        reset_lps(self)
+        print('P and Q have been set to maximize likelihood')
+        
         return res
        
     
