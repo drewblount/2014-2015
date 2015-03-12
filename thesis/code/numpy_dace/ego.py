@@ -195,7 +195,7 @@ class egoist:
         self.P = res.x[:self.k]
         self.Q = res.x[self.k:]
         reset_lps(self)
-        print('P and Q have been set to maximize likelihood')
+        print('P and Q have been set to maximize the likelihood equation.')
         
         return res
        
@@ -270,23 +270,52 @@ class egoist:
     # assumes a 1d x-space
     def pred_over(x_range):
         return [ self.predict( [x]) for x in pred_range ]
-    # plots the predictor and its error:
-    def plot1d(self, x_min=0.0, x_max=5.0, x_delta=0.01, y_min=0.0, y_max=1.0):
+        
+    # does all the 1d plotting stuff without calling plt.show
+    def plot1d_no_show(self, x_min=0.0, x_max=5.0, x_delta=0.01, y_min=0.0, y_max=1.0):
+        
+        fig, ax = plt.subplots()
+        plt.subplots_adjust(left=0.25, bottom=0.25)
+        plt.xlabel('x')
+        ax.set_ylabel('predicted y(x)')
+        plt.title('Toy Problem')
+        
         pred_range = np.arange(x_min, x_max, x_delta)
         preds  = [ self.predict( [x]) for x in pred_range ]
-        errors = [ self.pred_err([x]) for x in pred_range ]
+        # errors are illustrated with 2x sigma^2 (~three standard deviations)
+        # to illustrate a 95% confidence interval
+        errors = [ 2*self.pred_err([x]) for x in pred_range ]
         # elem-wise sum/difference of above two arrays
         pl_errors = map(add, preds, errors)
         mi_errors = map(sub, preds, errors)
         
         # plot the predictor and +/- errors
-        plt.plot(pred_range, preds)
-        plt.plot(pred_range, pl_errors, color="green")
-        plt.plot(pred_range, mi_errors, color="green")
+        pred_line,  = ax.plot(pred_range, preds)
+        p_err_line, = ax.plot(pred_range, pl_errors, color="green")
+        m_err_line, = ax.plot(pred_range, mi_errors, color="green")
         
-        plt.axis([x_min,x_max,y_min,y_max])
+        plt.axis([x_min, x_max, y_min, y_max])
+        
+        
+        # make another axis (exp improv. is at a smaller scale than predictor)
+        # plot the expected improvement
+        ax2 = ax.twinx()
+        imps = [ self.exp_improvement([x]) for x in pred_range ]
+        exp_imp_line, = ax2.plot(pred_range, imps, color='r')
+        ax2.set_ylabel('expected improvement', color='r')
+        for tl in ax2.get_yticklabels():
+            tl.set_color('r')            
+                
+        # plot the actual sample points
+        points = ax.plot([x[0] for x in self.X],self.Y, 'ko')
+                        
+
+    # plots the predictor and its error:
+    def plot1d(self, x_min=0.0, x_max=5.0, x_delta=0.01, y_min=0.0, y_max=1.0):
+        self.plot1d_no_show(x_min,x_max,x_delta,y_min,y_max)
         plt.show()
-        
+    
+    
     # Performs the above, with sliders to manipulate P and Q
     # show expected improvement
     def plot1d_sliders(self, x_min=0.0, x_max=5.0, x_delta=0.01, y_min=0.0, y_max=1.0, P_min=1.0,P_max=2.0,Q_min=None,Q_max=10.0):
@@ -302,7 +331,9 @@ class egoist:
         
         pred_range = np.arange(x_min, x_max, x_delta)
         preds  = [ self.predict( [x]) for x in pred_range ]
-        errors = [ self.pred_err([x]) for x in pred_range ]
+        # errors are illustrated with 2x sigma^2 (~three standard deviations)
+        # to illustrate a 95% confidence interval
+        errors = [ 2*self.pred_err([x]) for x in pred_range ]
         # elem-wise sum/difference of above two arrays
         pl_errors = map(add, preds, errors)
         mi_errors = map(sub, preds, errors)

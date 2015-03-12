@@ -1,6 +1,7 @@
 from ego import *
 from random import random
 from lazyprop import *
+from latin_hypercube import *
 
 # Reality check: does the predictor predict each already-evaluated function value?
 def pred_y_check(E, verbose=False, eps = 0.0001):
@@ -26,6 +27,7 @@ E = egoist(X, Y)
 
 pred_y_check(E)
 
+#latin_hypercube(3,3)
 '''
 for _ in range(10):
     x = random()*10
@@ -34,7 +36,7 @@ for _ in range(10):
 
 E.max_likelihood()
 print('P = '+str(E.P) +'\nQ = '+str(E.Q))
-E.plot1d_sliders()
+E.plot1d()
 
 # makes sure that lazyprops are deleted
 class testc:
