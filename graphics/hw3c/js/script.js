@@ -123,12 +123,15 @@ function drawScene() {
     
 	// honestly this translation is a relic from old code, and all of my later positions are relative to it so I haven't fixed it
     mat4.translate(mvMatrix, [0.0, 0.3, -3]);
+    mvPushMatrix();
+
+    mat4.rotate(mvMatrix, degToRad(r2), [1, 1, 1]);
 
     if (draw_shape) {
         shape.drawShape(gl);
         shad_shape.drawShape(gl);
     };	
-
+    mvPopMatrix();
 }
 
 // animate uses Date().getTime() to ensure that animated movement happens at a regular speed independent of framerate.
@@ -209,7 +212,6 @@ function smoothHandleShape(fname) {
     shape = fromOBJ_string(shape_string);
     // before complexifying the shape at all, generate its shadow
     shad_shape = shape.plane_shadow(light_source,floor_y);
-    console.log('shad_shape = '+shad_shape.verbose());
     shad_shape.initBuffs(gl);
     
     shape.split_verts();

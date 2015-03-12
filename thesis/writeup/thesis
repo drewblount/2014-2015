@@ -18,9 +18,14 @@
 \usepackage{palatino}
 \usepackage{pxfonts}
 
+%\usepackage{amsmath}
 
 %% Macros
 \newcommand{\mb}{\mathbf}
+
+
+\DeclareSymbolFont{bbold}{U}{bbold}{m}{n}
+\DeclareSymbolFontAlphabet{\mathbbold}{bbold}
 
 %%
 
@@ -76,7 +81,7 @@ The loop is run until results are satisfactory, or the expected improvement from
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=0.5\textwidth]{EGO_cycle_v1}
+	\includegraphics[width=0.5\textwidth]{EGO_cycle}
 	\caption{the three iterated stages of the SMBO process}
 	\label{fig:smbo_cycle}
 
@@ -136,14 +141,105 @@ for a process-wide $\sigma^2$. Despite the normal distribution, the $\epsilon(\X
 			\right ],
 \end{equation}
 
-where the free parameters $\{(\theta_i,p_i)$ for $i \in (1,2,...,k)$ determine the shape of the DACE predictor. Much more can (and should, and will) be said about the shape of the predictor implied by this correlation equation, but for now it suffices to say that it encodes the heuristic, ``points near each other in input-space should have nearby function values'', with a concept of nearness along each input dimension that is gaussian in shape, with magnitude and falloff-steepness determined by $\theta$ and $p$.
+where the free parameters $\{(\theta_i,p_i)$ for $i \in (1,2,...,k)$ determine the shape of the DACE predictor. Note that these three constraints completely describe the DACE model: we assume that we are modeling a stochastic process with mean $\mu$, standard deviation $\sigma^2$, and inter-sample correlation described by Eq. \ref{eq:dace_corr}.
+
+%write
+Here I should discuss what error correlation means with some pretty pictures like in Jones p.459.
+
+Much more can (and should, and will) be said about the shape of the predictor implied by this correlation equation, but for now it suffices to say that it encodes the heuristic, ``points near each other in input-space should have nearby function values'', with a concept of nearness along each input dimension that is gaussian in shape, with magnitude and falloff-steepness determined by $\theta$ and $p$.
 
 \subsection{Selection of $\{(\theta_i,p_i)\}$}
-To fit a DACE predictor to sample data, the $k+2$ free parameters $\mu, \sigma^2,$ and $\{(\theta_i,p_i)$ for $i \in (1,2,...,k)$ are set by maximizing the likelihood function which is implied by the prior assumptions \ref{eq:stoch_proc, dace_err, dace_corr}. 
+To fit a DACE predictor to sample data, the $k+2$ free parameters $\mu, \sigma^2,$ and $\{(\theta_i,p_i)$ for $i \in (1,2,...,k)$ are set by maximizing the likelihood function which is implied by the prior assumptions \ref{eq:stoch_proc, eq:dace_err, eq:dace_corr}. I will here walk through the derivation of that likelihood function.
 
-First, consider a set of independent gaussian random variables
+Likelihood, I'll remind the reader, is a statistical concept very similar to probability. % get a dank intro stats textbook here.
+Imagine a scenario where parameters $\psi$ give rise to some model $f_\psi$. Given some empirical observations $Z$, the concept of likelihood allows us to quantify how well the parameter choice $\psi$ and the generated model $f_\psi$ match our empirical observation---likelihood tests how well a model matches data. This is done quite simply: by defining the likelihood of a set of parameters given an observation, as the probability of that observation, given those parameters:
+
+\begin{equation} \label{eq:def_likelihood}
+L(\psi|Z) = Pr(Z|\psi).
+\end{equation}
+
+Note that this works intuitively well with our notion of probability: a set of parameters is a good one, i.e. it is likely, if the model that it generates is one wherein our observed data are relatively probable. The best model is that which is most likely, meaning that under no other model would the observed data $Z$ appear more probable.
+
+Here, our observed data is the vector of witnessed function values $\Y$, so finding an equation for the likelihood of our parameters is equivalent to deriving the joint probability distribution of this n-vector, given the assumptions laid out in the previous section. I will now derive this joint distribution, using techniques that should be familiar to those schooled in college-level statistics. I'll first derive a simpler distribution, then use the change of variables formula to arrive at the result.
+
+Consider a set of independent, identically-distributed gaussian random variables $\mathbb{Z} = Z_1,...,Z_n$, with mean 0 and standard deviation $\sigma^2$. For the sake of being explicit, the expectation function $f_{Z_i}$ for each $Z_i$ is then,
+
+\begin{equation} \label{eq:f_{Z_i}}
+f_{Z_i}=\frac{1}{\sigma\sqrt{2\pi}}e^{Z_i^2/\sigma^2}.
+\end{equation}
+
+The joint probability distribution of $\mathbb{Z}$ is simply the product of each of its [independent] components:
+
+\begin{align}  \label{eq:F_Z}
+f_\mathbb{Z}(\mathbb{Z}) &= \prod_{i=1}^n \frac{1}{\sigma\sqrt{2\pi}}e^{Z_i^2/\sigma^2} \\
+			 &= \frac{1}{(2\pi\sigma^2)^{n/2}} {E}xp\left [ \frac{1}{\sigma^2}\sum_{i=1}^{n} Z_i^2\right ] \nonumber\\
+			 &= \frac{1}{(2\pi\sigma^2)^{n/2}} e^{\mathbb{Z}^T\mathbb{Z}/\sigma^2},\nonumber
+\end{align}
+
+where the last line uses vector multiplication to denote the sum of the square components of $\mathbb{Z}$.
+
+Now, we use the change of variables formula to derive from this an equation for our actual data. For convenience, I'll consider the probability distribution of the vector of error terms, $\mathbb{\epsilon}$, rather than simply the output vector $\mathbbold{y}$. If $\mathbbold{1}$ denotes the 1-vector, then,
+
+\begin{equation}\label{eq:epsilon}
+\epsilon = \mathbbold{y} - \mathbbold{1}\mu.
+\end{equation}
+
+I will also consider $\mathbb{R}$, the \emph{correlation matrix} of the errors $\epsilon$. $\mathbb{R}$ is simply the $n\times n$ matrix whose $(i,j)^{th}$ entry is $Corr[\epsilon_i,\epsilon_j]$ as defined in Eq \ref{eq:dace_corr}. By construction, we know that $\mathbb{R}$ is symmetric and positive-definite, which means that a Cholesky decomposition exists CITE\cite{linear_algebra}, i.e., that there exists a lower-triangular matrix $A$ such that,
+
+\begin{equation} \label{eq:cholesky}
+\mathbb{R} = A A^T.
+\end{equation}
+
+Now, because of [WHY? is it the lower-triangularity of $A$? I don't see how...], we know that the matrix multiplication of $A$ and $\epsilon$ will produce a vector of mutually independent variables sharing the Normal$(0,\epsilon)$ distribution of each component of $\epsilon$. That is,
+\begin{equation} \label{Y_sub}
+A\epsilon=\mathbb{Z},
+\end{equation}
+
+where $\mathbb{Z}$ is and independent, identically distributed vector with each component Normal$(0,\epsilon)$. We will use this fact, along with the change of variables formula and the above-derived probability density function for such a $\mathbb{Z}$ (Eq \ref{eq:F_Z}), to arrive at the likelihood equation. Letting $g$ denote the linear transformation equivalent to left-multiplication by the matrix A, we see that,
+
+\begin{align} \label{eq:sub}
+g(\epsilon) &= \mathbb{Z} \\
+\epsilon &= g^{-1}(\mathbb{Z}) = A^{-1}\mathbb{Z}
+\label{eq:sub1}
+\end{align}
 
 
+
+Now recall the change of variables formula, which given Eq. \ref{eq:sub1} states that,
+\begin{align} \label{eq:change_of_vars}
+f_\epsilon &= f_\mathbb{Z}\left (g^{-1}(\mathbb{Z})\right)\times \left | g^{-1}(\mathbb{Z}) \right | \\
+			 &= f_\mathbb{Z}\left (A^{-1}\epsilon\right) |A^{-1}| \\ 
+			 &= f_\mathbb{Z}\left (A^{-1}\epsilon\right) \frac{1}{|A|}
+\end{align}
+
+Now plugging in Eq. \ref{eq:F_Z}, the formula for $f_\mathbb{Z}$, 
+
+\begin{align} \label{eq:getting_F_Y}
+f_\epsilon &= \frac{1}{(2\pi\sigma^2)^{n/2}|A|} {E}xp\left [ \frac{1}{\sigma^2}(A^{-1}\epsilon)^T(A^{-1}\epsilon)\right ].\\
+\end{align}
+
+Now I will do some linear algebra to the matrices in the exponent,
+
+\begin{align}
+(A^{-1}\epsilon)^T(A^{-1}\epsilon) &= \epsilon^T(A^{-1})^TA^{-1}\epsilon \nonumber\\
+			 						 &= \epsilon^T((A^T)^{-1}A^{-1})\epsilon\nonumber\\
+									 &= \epsilon^T(AA^T)^{-1}\epsilon\nonumber\\
+									 &= \epsilon^T\mathbb{R}^{-1}\epsilon
+\end{align}
+
+Also rewriting $|A|$ as $|\mathbb{R}|^{1/2}$, because the determinant of a product is the product of the determinants, and Eq. \ref{eq:cholesky}, we get the clean formulation,
+
+\begin{equation} \label{eq:likelihood1}
+\frac{1}
+  {(2\pi\sigma^2)^{n/2}|\mb{R}|^{1/2}}\ 
+Exp \left 
+  [ \frac
+    {\epsilon^T\mathbb{R}^{-1}\epsilon}
+    {\sigma^2} 
+\right ].
+\end{equation}
+
+[ASK ALBYN:Why am I missing a factor of $-\frac{1}{2}$ over Jones's result (Eq \ref{eq:likelihood})?]
 
 Recall the definition of correlation, that for random variables $a$ and $b$,
 
@@ -151,7 +247,7 @@ Recall the definition of correlation, that for random variables $a$ and $b$,
 \text{Corr}(a,b) = \frac{E\left[ \left ( a - E(a) \right ) \left ( b - E(b) \right ) \right ]}{\sigma_a \sigma_b},
 \end{equation}
 
-where $E$ is the expected-value function. Now considering Eq. \ref{dace_err}, we have a simple equation for the correlation of two errors,
+where $E$ is the expected-value function. Now considering Eq. \ref{eq:dace_err}, we have a simple equation for the correlation of two errors,
 
 \begin{equation} \label{eq:simp_corr}
 \text{Corr}(a,b) = \frac{E\left[\epsilon(\X^{(i)})\epsilon(\X^{(i)})\right]}{\sigma^2}
@@ -161,7 +257,7 @@ From here, you can derive the likelihood equation,
 
 \begin{equation} \label{eq:likelihood}
 \frac{1}
-  {(2\pi\sigma^2)^{n/2}|\mb{R}|^\frac{1}{2}}\ 
+  {(2\pi\sigma^2)^{n/2}|\mb{R}|^{1/2}}\ 
 exp \left 
   [ -\frac
     {(\mb{y}-\mb{1}\mu)'\mb{R}^{-1}(\mb{y}-\mb{1}\mu)}
@@ -169,7 +265,7 @@ exp \left
 \right ].
 \end{equation}
 
-If we fix the $\{(\theta_i,p_i)$, the above equation can be analytically maximized in $\mu$ and $\sigma^2$ \citep{jones_efficient_1998} to get,
+If we fix the $\{(\theta_i,p_i)\}$, the above equation can be analytically maximized in $\mu$ and $\sigma^2$ \citep{jones_efficient_1998} to get,
 
 \begin{equation} \label{eq:mu_hat}
 \hat{\mu}=\frac
@@ -186,8 +282,12 @@ and,
 	{n}.
 \end{equation}
 
-Plugging Eqs \ref{eq:mu_hat, eq:sig_hat} into Eq. \ref{eq:likelihood}, gives the concentrated likelihood function that is numerically optimized to fit the parameters $p$ and $\theta$ to a given dataset.
+Note that when $\mb{R}=\mb{I}$, the identity matrix, there is no correlation between each variable. As you would hope, in this case Eq. \ref{eq:mu_hat} and Eq. \ref{eq:sig_hat} reduce to the standard statistical definitions of mean and standard deviation.
 
+
+\begin{equation} \label{eq:conc_likelihood}
+asdfasdfasd
+\end{equation}
 
 
 \chapter{Implementation}
@@ -211,7 +311,7 @@ Plugging Eqs \ref{eq:mu_hat, eq:sig_hat} into Eq. \ref{eq:likelihood}, gives the
 
 
 \bibliographystyle{apalike}
-\bibliography{thesis}
+\bibliography{bib/thesis}
 
 
 \end{document}

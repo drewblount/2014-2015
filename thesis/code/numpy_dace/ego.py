@@ -177,7 +177,6 @@ class egoist:
             p_bounds = [(1,2) for _ in range(self.k)]
             q_bounds = [(self.eps,None) for _ in range(self.k)]
             bounds = tuple(p_bounds+q_bounds)
-            print('bounds = ' + str(bounds))
         
         # the function to be minimized. note that P is the first half of z, Q the second
         def neg_conc(z): return (-1 * self.conc_likelihood(z[:self.k],z[self.k:]))
@@ -294,9 +293,11 @@ class egoist:
         mi_errors = map(sub, preds, errors)
         
         # plot the predictor and +/- errors
+        
         pred_line,  = ax.plot(pred_range, preds)
         p_err_line, = ax.plot(pred_range, pl_errors, color="green")
         m_err_line, = ax.plot(pred_range, mi_errors, color="green")
+        
         plt.axis([x_min, x_max, y_min, y_max])
         
         
@@ -309,12 +310,19 @@ class egoist:
         for tl in ax2.get_yticklabels():
             tl.set_color('r')            
                 
+        # plot the actual sample points
+        points = ax.plot([x[0] for x in self.X],self.Y, 'ko')
+                
+                
         # sets slider locations
         axP = plt.axes([0.25, 0.05, 0.65, 0.03])
         axQ = plt.axes([0.25, 0.1, 0.65, 0.03])
         
         slidP = Slider(axP, 'P', P_min, P_max, valinit=self.P[0])
         slidQ = Slider(axQ, 'Q', Q_min, Q_max, valinit=self.Q[0])
+        
+        
+        
         
         def update(val):
             self.P = [slidP.val]
@@ -334,7 +342,11 @@ class egoist:
             
             imps = [ self.exp_improvement([x]) for x in pred_range ]
             exp_imp_line.set_ydata(imps)
-                            
+            
+            # redraw the sample points so they are on top layer
+            points = ax.plot([x[0] for x in self.X],self.Y, 'ko')
+            
+            
             fig.canvas.draw_idle()
             
                         
@@ -342,8 +354,7 @@ class egoist:
         slidP.on_changed(update)
         slidQ.on_changed(update)
         
+        
         plt.show()
-        
-        
         
         
