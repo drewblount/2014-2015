@@ -9,3 +9,5 @@
 
 # I hereby decree that I won't backup stuff that can be recompiled from backed-up source
 /build/
+
+/docs/_build/
