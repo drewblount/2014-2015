@@ -8,4 +8,8 @@ setup(name='smbo',
       author_email='dblount@reed.edu',
       license='MIT',
       packages=['smbo'],
+      install_requires=[
+          'numpy',
+          'matplotlib',
+      ],
       zip_safe=False)

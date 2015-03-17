@@ -3,10 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-smbo---code from my thesis
+smbo -- a tool for sequential model-based optimization
 ================================
-Drew Blount
+built as part of Drew Blount's Senior Mathematics Thesis at Reed College
 
+.. toctree::
+   :maxdepth: 2
 
 
 
@@ -17,26 +19,21 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+
 Installation
 ------------
 
 Install smbo by running:
 
-    install project
+    install smbo
 
-Contribute
+Source
 ----------
 
-- Issue Tracker: github.com/$project/$project/issues
-- Source Code: github.com/$project/$project
+https://github.com/drewblount/2014-2015/tree/master/thesis/code/smbo
 
-Support
--------
-
-If you are having issues, please let us know.
-We have a mailing list located at: project@google-groups.com
 
 License
 -------
 
-The project is licensed under the BSD license.
+The project is licensed under the MIT license.
