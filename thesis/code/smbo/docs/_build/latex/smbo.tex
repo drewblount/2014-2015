@@ -19,7 +19,7 @@
 
 
 \title{smbo Documentation}
-\date{March 17, 2015}
+\date{March 19, 2015}
 \release{0.1}
 \author{Drew Blount}
 \newcommand{\sphinxlogo}{}
@@ -130,7 +130,7 @@
 
 
 built as part of Drew Blount's Senior Mathematics Thesis at Reed College
-
+\phantomsection\label{index:module-smbo}\index{smbo (module)}
 
 \chapter{Indices and tables}
 \label{index:indices-and-tables}\label{index:smbo-a-tool-for-sequential-model-based-optimization}\begin{itemize}
@@ -160,11 +160,347 @@ install smbo
 \href{https://github.com/drewblount/2014-2015/tree/master/thesis/code/smbo}{https://github.com/drewblount/2014-2015/tree/master/thesis/code/smbo}
 
 
-\section{License}
+\chapter{Documentation for the Code}
+\label{index:documentation-for-the-code}
+
+\section{doctest -- including docstrings}
+\label{index:doctest-including-docstrings}
+This is something I want to say that is not in the docstring.
+\index{smb\_optimizer (class in smbo.smb\_optimizer)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.smb_optimizer.smb_optimizer}\pysiglinewithargsret{\strong{class }\code{smbo.smb\_optimizer.}\bfcode{smb\_optimizer}}{\emph{domain}, \emph{objective\_func}, \emph{modeller}, \emph{init\_sampler=None}}{}
+An object that, given an input domain, objective function, and modelling strategy, seeks to efficiently find
+the global optimum of the objective by the generation of sequential models.
+\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{itemize}
+\item {} 
+\textbf{\texttt{domain}} (\emph{list}) -- a list whose \(i^{th}\) element is the \((lower\ bound,\ upper\ bound)\) pair
+describing the domain of interest in the \(i^{th}\) input dimension. The length
+of this list defines the dimension of input space, denoted \(k\). This smb\_optimizer
+then optimizes the \(k\)-rectangle defined by the domain arg.
+
+\item {} 
+\textbf{\texttt{objective\_func}} (\emph{function}) -- a function (or any object with a suitable \_\_apply\_\_ method)
+that maps \(k\)-vectors to floats. The goal of an smb\_optimizer is to minimize this
+function over the domain defined above.
+
+\item {} 
+\textbf{\texttt{modeller}} (\emph{function}) -- a function (or any object with a suitable \_\_apply\_\_ method) that maps a
+tuple \((X,Y)\), where :math{}`X{}` is a list of sample points (each a \(k\)-vector from the domain),
+and \(Y\) their evaluated objective values; to a tuple of functions
+\((\hat{y},\ \hat{\sigma}^2)\). Each output function maps points in the input domain to real numbers.
+\(\hat{y}\) represents the model's best estimate of the objective function, and \(\hat{\sigma}^2\)
+is the estimated error of the prediction \(\hat{y}\).
+
+\item {} 
+\textbf{\texttt{init\_sampler}} (\emph{function}) -- a function which will select initial sample points, informing the zero-generation model.
+If left unspecified, is by default set to a \(2k+2\)-sample latin hypercube over the domain,
+created with \code{smbo.latin\_hypercube}.
+
+\end{itemize}
+
+\item[{Returns}] \leavevmode
+An object with attributes duplicating domain, objective\_func, and modeller. Further, the class method
+\code{initialize()} is called, which picks initial sample points, evaluates the objective function at
+those points, and generates an inital predictive model with modeller. This object is then ready to
+iteratively improve its predictions and seek the global minimum of objective\_func; the object now has fields
+self.X, self.Y, self.y\_hat, and self.err\_hat to describe the sample points, corresponding objective values,
+predictor function, and certainty function respectively.
+
+\end{description}\end{quote}
+\index{choose\_sample() (smbo.smb\_optimizer.smb\_optimizer method)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.smb_optimizer.smb_optimizer.choose_sample}\pysiglinewithargsret{\bfcode{choose\_sample}}{\emph{randomize=False}}{}~\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode
+\textbf{\texttt{randomize}} (\emph{bool}) -- if true, the next sample point is chosen randomly with probability weighted by expected improvement; otherwise, returns the point in the input domain with the highest expected improvement.
+
+\end{description}\end{quote}
+
+Chooses the next sample point
+
+\end{fulllineitems}
+
+\index{find\_min() (smbo.smb\_optimizer.smb\_optimizer method)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.smb_optimizer.smb_optimizer.find_min}\pysiglinewithargsret{\bfcode{find\_min}}{}{}~\begin{quote}\begin{description}
+\item[{Returns}] \leavevmode
+\{x: xcoord, y: ycoord\}, simply the (x,y) sample point with the lowest y value (the current best-minimum)
+
+\item[{Return type}] \leavevmode
+dict
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+\phantomsection\label{index:module-smbo.models}\index{smbo.models (module)}\phantomsection\label{index:module-models}\index{models (module)}\index{dace (class in smbo.models)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.models.dace}\pysiglinewithargsret{\strong{class }\code{smbo.models.}\bfcode{dace}}{\emph{X}, \emph{Y}}{}
+A little hefty to be simply a function, this class (which behaves as a function because of its \_\_apply\_\_ method)
+fits a DACE model to provided sample points
+\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{itemize}
+\item {} 
+\textbf{\texttt{X}} (\emph{list}) -- a list of input vectors
+
+\item {} 
+\textbf{\texttt{Y}} (\emph{list}) -- a list of observed objective values
+
+\end{itemize}
+
+\item[{Returns}] \leavevmode
+(pred\_y,pred\_err): two functions, each k-to-1, where k is the dimension of the input space, representing the dace predictor surface and predicted error at each point in input space
+
+\item[{Return type}] \leavevmode
+tuple
+
+\end{description}\end{quote}
+\index{conc\_likelihood() (smbo.models.dace method)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.models.dace.conc_likelihood}\pysiglinewithargsret{\bfcode{conc\_likelihood}}{\emph{new\_P=None}, \emph{new\_Q=None}}{}~\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{itemize}
+\item {} 
+\textbf{\texttt{new\_P}} (\emph{list}) -- an \(n\)-vector resetting the \(p\) parameter of the DACE model
+
+\item {} 
+\textbf{\texttt{new\_Q}} (\emph{list}) -- an \(n\)-vector resetting the \(q\) or :math:{}`        heta{}` parameter of the DACE model
+
+\end{itemize}
+
+\item[{Returns}] \leavevmode
+the likelihood of the current DACE params P and Q, given the data X and Y
+
+\item[{Return type}] \leavevmode
+float
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{corr() (smbo.models.dace method)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.models.dace.corr}\pysiglinewithargsret{\bfcode{corr}}{\emph{x1}, \emph{x2}}{}~\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{itemize}
+\item {} 
+\textbf{\texttt{x1}} (\emph{list}) -- a coordinate in the domain
+
+\item {} 
+\textbf{\texttt{x2}} (\emph{list}) -- a coordinate in the domain
+
+\end{itemize}
+
+\item[{Returns}] \leavevmode
+the correlation between estimation errors at x1 and x2
+
+\item[{Return type}] \leavevmode
+float
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{corr\_vector() (smbo.models.dace method)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.models.dace.corr_vector}\pysiglinewithargsret{\bfcode{corr\_vector}}{\emph{x\_new}}{}~\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode
+\textbf{\texttt{x\_new}} -- a \(k\)-vector from the domain
+
+\item[{Returns}] \leavevmode
+a vector whose \(i^{th}\) element is the parameterized correlation between x\_new and the :math{}`i\textasciicircum{}\{th\}{}` sample point
+
+\item[{Return type}] \leavevmode
+list
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{dist() (smbo.models.dace method)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.models.dace.dist}\pysiglinewithargsret{\bfcode{dist}}{\emph{x1}, \emph{x2}}{}~\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{itemize}
+\item {} 
+\textbf{\texttt{x1}} (\emph{list}) -- a coordinate in the domain
+
+\item {} 
+\textbf{\texttt{x2}} (\emph{list}) -- a coordinate in the domain
+
+\end{itemize}
+
+\item[{Returns}] \leavevmode
+the parameterized distance between x1 and x2
+
+\item[{Return type}] \leavevmode
+float
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{max\_likelihood() (smbo.models.dace method)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.models.dace.max_likelihood}\pysiglinewithargsret{\bfcode{max\_likelihood}}{\emph{bounds=None}, \emph{verbose=False}}{}~\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode
+\textbf{\texttt{bounds}} (\emph{list}) -- the \(P  imes Q\) domain over which likelihood is being maximized, defaults to \((1,2)       imes(0,\infty)\)
+
+\item[{Returns}] \leavevmode
+res: an object describing the \(P\) and :math{}`Q{}` values that optimize likelihood
+
+\item[{Return type}] \leavevmode
+optimization\_result
+
+\end{description}\end{quote}
+
+The evaluation of this function also resets self.P and self.Q to the values indicated by res, i.e.
+it sets P and Q to maximize the likelihood of the DACE model, thereby fitting the model to the data.
+
+\end{fulllineitems}
+
+\index{pred\_err() (smbo.models.dace method)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.models.dace.pred_err}\pysiglinewithargsret{\bfcode{pred\_err}}{\emph{x\_new}}{}~\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode
+\textbf{\texttt{x\_new}} (\emph{list}) -- a \(k\)-vector from the domain
+
+\item[{Returns}] \leavevmode
+the predicted function value at x\_new
+
+\item[{Return type}] \leavevmode
+float
+
+\end{description}\end{quote}
+
+This is computed using the so-called best linear unbiased predictor,  Jones Eq. 7
+
+\end{fulllineitems}
+
+\index{predict() (smbo.models.dace method)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.models.dace.predict}\pysiglinewithargsret{\bfcode{predict}}{\emph{x\_new}}{}~\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode
+\textbf{\texttt{x\_new}} (\emph{list}) -- a \(k\)-vector from the domain
+
+\item[{Returns}] \leavevmode
+the predicted function value at x\_new
+
+\item[{Return type}] \leavevmode
+float
+
+\end{description}\end{quote}
+
+This is computed using the so-called best linear unbiased predictor,  Jones Eq. 7
+
+\end{fulllineitems}
+
+\index{reset() (smbo.models.dace method)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.models.dace.reset}\pysiglinewithargsret{\bfcode{reset}}{}{}
+Resets all lazyprops
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+\phantomsection\label{index:module-smbo.samplers}\index{smbo.samplers (module)}\phantomsection\label{index:module-samplers}\index{samplers (module)}\index{latin\_hypercube() (in module smbo.samplers)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.samplers.latin_hypercube}\pysiglinewithargsret{\code{smbo.samplers.}\bfcode{latin\_hypercube}}{\emph{m}, \emph{k}, \emph{bounds=None}, \emph{rand\_sampler=\textless{}built-in method random of Random object\textgreater{}}}{}~\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{itemize}
+\item {} 
+\textbf{\texttt{m}} (\emph{int}) -- the number of desired sample points
+
+\item {} 
+\textbf{\texttt{k}} (\emph{int}) -- the dimension of input space
+
+\item {} 
+\textbf{\texttt{bounds}} (\emph{list}) -- the \(k\) min-max tuples describing the function domain as a \(k\)-rectangle. Defaults to the unit \(k\)-cube.
+
+\item {} 
+\textbf{\texttt{rand\_sampler}} (\emph{function}) -- used to choose actual sample coordinates once the latin hypercube selects a sample's particular hyper(sub)rectangle in the input domain.
+
+\end{itemize}
+
+\item[{Returns}] \leavevmode
+An \(m\)-list of \(k\)-vectors, representing an \(m\)-point latin hypercube sample of the \(k\)-dimensional input domain.
+
+\item[{Return type}] \leavevmode
+list
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\phantomsection\label{index:module-smbo.lazyprop}\index{smbo.lazyprop (module)}\phantomsection\label{index:module-lazyprop}\index{lazyprop (module)}\index{lazyprop() (in module smbo.lazyprop)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.lazyprop.lazyprop}\pysiglinewithargsret{\code{smbo.lazyprop.}\bfcode{lazyprop}}{\emph{fn}}{}~\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode
+\textbf{\texttt{fn}} (\emph{function}) -- a function, whose only argument is self, whose output shouldn't
+be computed more than once for a given X,Y pair.
+
+\item[{Returns}] \leavevmode
+\begin{description}
+\item[{\_lazyprop: a function that calls fn the first time it is called, then remembers}] \leavevmode
+that output and returns this remembered value after subsequent calls
+
+\end{description}
+
+
+\item[{Return type}] \leavevmode
+function
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{reset\_lps() (in module smbo.lazyprop)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.lazyprop.reset_lps}\pysiglinewithargsret{\code{smbo.lazyprop.}\bfcode{reset\_lps}}{\emph{self}}{}
+Resets all lazyprops, so that the evaluated function vals are forgotten and must be
+recomputed from raw data
+
+\end{fulllineitems}
+
+
+
+\subsection{License}
 \label{index:license}
 The project is licensed under the MIT license.
 
 
+\renewcommand{\indexname}{Python Module Index}
+\begin{theindex}
+\def\bigletter#1{{\Large\sffamily#1}\nopagebreak\vspace{1mm}}
+\bigletter{l}
+\item {\texttt{lazyprop}} \emph{(Unix, Windows)}, \pageref{index:module-lazyprop}
+\indexspace
+\bigletter{m}
+\item {\texttt{models}} \emph{(Unix, Windows)}, \pageref{index:module-models}
+\indexspace
+\bigletter{s}
+\item {\texttt{samplers}} \emph{(Unix, Windows)}, \pageref{index:module-samplers}
+\item {\texttt{smbo}}, \pageref{index:module-smbo}
+\item {\texttt{smbo.lazyprop}}, \pageref{index:module-smbo.lazyprop}
+\item {\texttt{smbo.models}}, \pageref{index:module-smbo.models}
+\item {\texttt{smbo.samplers}}, \pageref{index:module-smbo.samplers}
+\end{theindex}
 
 \renewcommand{\indexname}{Index}
 \printindex

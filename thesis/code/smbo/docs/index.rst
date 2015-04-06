@@ -4,11 +4,13 @@
    contain the root `toctree` directive.
 
 smbo -- a tool for sequential model-based optimization
-================================
+*************************************************************************
 built as part of Drew Blount's Senior Mathematics Thesis at Reed College
 
 .. toctree::
    :maxdepth: 2
+
+.. automodule:: smbo
 
 
 
@@ -31,6 +33,29 @@ Source
 ----------
 
 https://github.com/drewblount/2014-2015/tree/master/thesis/code/smbo
+
+
+Documentation for the Code
+**************************
+
+
+
+doctest -- including docstrings
+====================================================
+
+This is something I want to say that is not in the docstring.
+
+.. autoclass:: smbo.smb_optimizer.smb_optimizer
+	:members: choose_sample, find_min
+	
+.. automodule:: smbo.models
+	:members:
+		
+.. automodule:: smbo.samplers
+	:members:
+	
+.. automodule:: smbo.lazyprop
+	:members:
 
 
 License

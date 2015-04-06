@@ -123,7 +123,7 @@ class dace:
         
     @lazyprop
     def R_det(self,eps=1e-8):
-        #hmmm, this seems like terrible practice, but I can't have R_det == 0 because of a div by zero in the likelihood equation.
+        #hmmm, this seems like terrible practice, but I can't have R_det == 0 because it is divided by in the likelihoood equation
         return max(eps,la.det(self.R))
         
     @lazyprop
@@ -159,7 +159,7 @@ class dace:
     # Jones eq(6)
     @lazyprop
     def var_hat(self, eps=1e-8):
-        #hmmm, this seems like terrible practice, but I can't have var_hat == 0 because of a div by zero in the likelihood equation.
+        #hmmm, this seems like terrible practice, but I can't have var_hat == 0 because it is divided by in the likelihoood equation
         return max(eps, self.Y_min_mu.T.dot(self.R_inv_Y_min_mu) / self.n)
                 
     # Jones eq 4 w/ 5, 6 inserted for mu, stdev

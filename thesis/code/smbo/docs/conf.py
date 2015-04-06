@@ -105,6 +105,34 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+# adds autoinclude of docstrings (autodoc), support for google docstring syntax (napoleon), and support for
+# latex math markup with the :math:`write latex math here` syntax (sphinx.ext.mathjax)
+extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon','sphinx.ext.mathjax']
+
+# automatically includes in documentation the __init__ functions. From mzjn's answer to  http://stackoverflow.com/questions/5599254/how-to-use-sphinxs-autodoc-to-document-a-classs-init-self-method
+def skip(app, what, name, obj, skip, options):
+    if name == "__init__":
+        return False
+    return skip
+
+def setup(app):
+    app.connect("autodoc-skip-member", skip)
+
+autoclass_content = 'both'
+
+
+## along witht he autodoc and napoleon extensions, allows me to write google-advised docstrings which compile with sphinx
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+napoleon_include_private_with_doc = False
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar = False
+napoleon_use_param = True
+napoleon_use_rtype = True
+
 
 # -- Options for HTML output ----------------------------------------------
 
