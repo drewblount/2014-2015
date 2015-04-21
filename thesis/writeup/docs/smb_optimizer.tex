@@ -1,0 +1,83 @@
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.smb_optimizer.smb_optimizer}\pysiglinewithargsret{\strong{class }\code{smbo.smb\_optimizer.}\bfcode{smb\_optimizer}}{\emph{domain}, \emph{objective\_func}, \emph{modeller}, \emph{init\_sampler=None}}{}
+An object that, given an input domain, objective function, and modelling strategy, implements sequential model-based optimization to search for a global minimum of the objective function.
+\begin{quote}\begin{description}
+\item[{Initialization Arguments}] \leavevmode\begin{itemize}
+\item {} 
+\textbf{\texttt{domain}} (\emph{list}) -- a list whose \(i^{th}\) element is the \((lower\ bound,\ upper\ bound)\) pair
+describing the domain of interest in the \(i^{th}\) input dimension. The length
+of this list defines the dimension of input space, denoted \(k\). This smb\_optimizer
+then optimizes the \(k\)-rectangle defined by the domain arg.
+
+\item {} 
+\textbf{\texttt{objective\_func}} (\emph{function}) -- a function (or any object with a suitable \_\_apply\_\_ method)
+that maps \(k\)-vectors to floats. The goal of an smb\_optimizer is to minimize this
+function over the domain defined above.
+
+\item {} 
+\textbf{\texttt{modeller}} (\emph{function}) -- a function (or any object with a suitable \_\_apply\_\_ method) that maps a
+tuple \((X,Y)\), which describes the input and known output values for a list of sample points to a tuple of functions
+\((\hat{y},\ \hat{\sigma}^2)\).
+\(\hat{y}\) represents the model's best estimate of \code{objective\_func(X)}, and \(\hat{\sigma}^2\)
+is the estimated error of that prediction.
+
+\item {} 
+\textbf{\texttt{init\_sampler}} (\emph{function}) -- a function which will select initial sample points, informing the zero-generation model.
+If left unspecified, is by default set to a \(2k+2\)-sample latin hypercube over the domain,
+created with \code{smbo.latin\_hypercube}.
+
+\end{itemize}
+
+
+\item[{Attributes---Set at Initialization}] \leavevmode\begin{itemize}
+
+\item{}
+\textbf{\texttt{X}} (\emph{list}) -- The list of points where \code{objective\_func} has been evaluated already
+
+\item {} 
+\textbf{\texttt{Y}} (\emph{list}) -- The list of associated objective function values.
+
+\item {} 
+\textbf{\texttt{pred\_y}} (\emph{function}), \textbf{\texttt{pred\_err}} (\emph{function}) -- The predictor and predicted error surfaces; the output of \code{modeller(X,Y)}.
+
+\item {} 
+\textbf{\texttt{f\_min}} (\emph{dict:}\texttt{\{x:\_,y:\_\}}) -- The sample point that is the current known minimum.
+
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+% expected improvement
+\index{exp\_improvement() (smbo.smb\_optimizer.smb\_optimizer method)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.smb_optimizer.smb_optimizer.exp_improvement}\pysiglinewithargsret{\bfcode{exp\_improvement}}{\emph{x\_new}}{}Calculates the expected improvement at \code{x\_new}, by estimating from \code{pred\_y} and \code{pred\_err} the probability that an evaluation of \code{objective\_func} at \code{x\_new} would find a value lower than \code{f\_min}.
+
+
+\end{fulllineitems}
+
+
+% sample
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.smb_optimizer.smb_optimizer.sample}\pysiglinewithargsret{\bfcode{sample}}{}{}
+Chooses the next sample point by maximizing \code{exp\_improvement}.
+Evaluates \code{objective\_func} there, updating \code{X} and \code{Y}. Updates \code{pred\_y} and \code{pred\_err} to the output of \code{modeller(X,Y)}.
+\end{fulllineitems}
+
+
+% take_samples
+\index{take\_samples() (smbo.smb\_optimizer.smb\_optimizer method)}
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.smb_optimizer.smb_optimizer.take_samples}\pysiglinewithargsret{\bfcode{take\_samples}}{\emph{stopping\_improvement=0.01}, \emph{max\_iters=100}, \emph{plot\_dims=None}}{}
+Completes the SMBO loop until the best expected improvement is below \code{stopping\_improvement}, or \code{max\_iters} times. Optionally, produces plots of the prediction and error surfaces at every iteration.
+\end{fulllineitems}
+
+
+
+
+
+
+\end{fulllineitems}
+

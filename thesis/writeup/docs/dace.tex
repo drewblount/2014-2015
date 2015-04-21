@@ -1,0 +1,39 @@
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.models.dace}\pysiglinewithargsret{\strong{class }\code{smbo.models.}\bfcode{dace}}{\emph{X}, \emph{Y}}{}
+A class that implements the DACE model to produce predictor and error surfaces from sample points
+\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{itemize}
+\item {} 
+\textbf{\texttt{X}} (\emph{list}) -- a list of input vectors
+
+\item {} 
+\textbf{\texttt{Y}} (\emph{list}) -- a list of observed objective values
+
+\end{itemize}
+
+\item[{Returns}] \leavevmode
+(pred\_y,pred\_err): two functions, each k-to-1, where k is the dimension of the input space, representing the DACE predictor and predicted error at any point in input space.
+
+\item[{Return type}] \leavevmode
+tuple
+
+\end{description}\end{quote}
+\index{conc\_likelihood() (smbo.models.dace method)}
+
+\begin{fulllineitems}
+\phantomsection\label{index:smbo.models.dace.conc_likelihood}\pysiglinewithargsret{\bfcode{conc\_likelihood}}{\emph{new\_P=None}, \emph{new\_Q=None}}{}~\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{itemize}
+\item {} 
+\textbf{\texttt{new\_P}} (\emph{list}) -- an \(n\)-vector resetting the \(p\) parameter of the DACE model
+
+\item {} 
+\textbf{\texttt{new\_Q}} (\emph{list}) -- an \(n\)-vector resetting the \(q\) or :math:{}`        heta{}` parameter of the DACE model
+
+\end{itemize}
+
+\end{description}\end{quote}
+
+Returns the statistical likelihood of the current DACE parameters \code{P' and :code:{}`Q', given the data :code:{}`X} and \code{Y}.
+
+\end{fulllineitems}
+\end{fulllineitems}

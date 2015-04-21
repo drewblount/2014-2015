@@ -1,0 +1,73 @@
+
+\documentclass[letterpaper]{report}
+\usepackage{mysphinx}
+
+\usepackage{graphicx}
+\graphicspath{ {images/} }
+\newcommand{\X}{\mathbf{x}}
+\newcommand{\Y}{\mathbf{y}}
+\newcommand{\R}{\mathbf{R}}
+
+%\usepackage{natbib,alifeconf}
+\usepackage{natbib,amsmath}
+\usepackage[top=1.5in, bottom=1.5in, left=1.25in, right=1.25in]{geometry}
+
+% for the results table
+\usepackage{booktabs}
+\usepackage{multirow,bigstrut}
+\usepackage{tabu}
+
+
+\usepackage{palatino}
+\usepackage{pxfonts}
+\usepackage{caption}
+
+\usepackage{framed}
+\setlength{\fboxsep}{10pt}
+\setlength{\fboxrule}{1.5pt}
+
+
+%\usepackage[urw-garamond]{mathdesign}
+%\usepackage[T1]{fontenc}
+
+
+
+%\usepackage{amsmath}
+
+%% Macros
+\newcommand{\mb}{\mathbf}
+
+
+\DeclareSymbolFont{bbold}{U}{bbold}{m}{n}
+\DeclareSymbolFontAlphabet{\mathbbold}{bbold}
+
+%%
+
+
+
+\title{Sequential Model-Based Optimization\\ {\small \textit{-- of --}} \\Expensive Blackbox Functions}
+\author{Drew Blount \\
+\mbox{}\\
+Mathematics Department, Reed College\\
+\\
+dblount@reed.edu}
+
+\begin{document}
+\maketitle
+
+\input{0_abstract.tex}
+\input{1_intro.tex}
+\input{2_smbo.tex}
+\input{3_EGO.tex}
+\input{4_application.tex}
+\input{5_discussion.tex}
+
+
+\bibliographystyle{apalike}
+\bibliography{bib/thesis}
+
+
+\end{document}
+
+
+

@@ -31,17 +31,29 @@ The EGO algorithm, our prototypical SMBO process, is defined by a particular cho
 
 There were two factors that influenced the decision to implement the DACE model in this function-wrapped-class kind of way.
 First, there is the standard conceptual appeal of functional programming---here, we can appreciate the mathematical purity of a code module that behaves exactly as the generic modelling function $M$ described above, mapping sample points to predictive models. This also makes clear the modular distinction between the central \texttt{smb$\_$optimizer} and its modeller---as far as an \texttt{smb$\_$optimizer} instance is concerned, the modeller is a black box which produces models from sample points. On the other hand, the functional paradigm makes it awkward to allow an \texttt{smbo} package user to experiment with the specifics of a particular modelling function, e.g. to see the results of modifying traditionally internal DACE parameters, such as the characteristic parameter vectors $\mathbf{P}$ and $\mathbf{\theta}$ (the reader should see Section \ref{sec:dace} if they've forgotten why one might want to play with these parameters). 
-\begin{itemize}\label{fig:smb_optimizer}
-\item{this}
-\item{list}
-\item{is a}
-\item{placeholder}
-\item{for the formatted \texttt{smb$\_$optimizer} initializer's documentation (for just the single \texttt{$\_ \_ $init$\_ \_$} function)}
-\item{(currently wrestling with some latex package conflicts to get excerpts of the sphinx/latex docs into this .tex file)}
-\item{this is a big figure and will be on a page without any other figures}
-\item{I think it'd be good to just lay out exactly what an \texttt{smb$\_$optimizer} is without sending people to the appendix.}
-\end{itemize}
 
+
+% The smb_optimizer documentation
+\begin{minipage}{\textwidth}
+\begin{framed}
+\input{docs/smb_optimizer.tex}
+\end{framed}
+
+\captionof{figure}{A summary of the documentation of the \texttt{smb$\_$optimizer} class. To find a global minimum, initialize an \texttt{smb\_optimizer}, call \texttt{take\_samples}, then look at \texttt{f\_min}.}\label{fig:smb_optimizer}
+
+\end{minipage}
+
+
+
+% The dace documentation
+\begin{minipage}{\textwidth}
+\begin{framed}
+\input{docs/dace.tex}
+\end{framed}
+
+\captionof{figure}{Selected documentation for the \texttt{dace} model class.}\label{fig:dace_doc}
+
+\end{minipage}
 
 \section{Optimization Subroutines}
 The EGO algorithm as implemented by \texttt{smbo.smb$\_$optimizer} and \texttt{smbo.dace} together involves two global optimization steps as subroutines: the fitting of the DACE model by maximizing the likelihood of its characteristic parameters (Section \ref{sec:max_lik}), and the SMBO-standard selection of successive sample points by maximizing the expected improvement function. These two steps are the main performance and runtime bottlenecks of the SMBO algorithm, at least as implemented by my \texttt{smbo} package.
