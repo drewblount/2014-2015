@@ -1,0 +1,30 @@
+\chapter{Discussion}
+
+Having presented the general framework of Sequential Model-Based Optimization, and explored the case study of the EGO algorithm, I will here discuss the significance of this optimization paradigm---the types of problems it is equipped to handle, why those problems are here to stay, and why sequential model-based optimization is a conceptually important approach to consider. To do so, I will first survey SMBO algorithms beyond EGO, to give an impression of the state-of-the art. This will lead to a discussion of the \emph{algorithm selection problem}, a particular type of NP-hard search that is of central importance to the field of machine learning. I argue for adopting SMBO as the default solution strategy. Finally, taking a different tack, I will discuss several yet-untested generalizations of SMBO which merit further study, including a strategy I call recursive meta-optimization.
+
+\section{SMBO beyond EGO}
+
+Recall the three-stage characterization of SMBO, most recently illustrated in Section \ref{sec:design}. The first step in this process relies only upon the function being optimized; it is independent of the particulars of the SMBO algorithm at hand. And as discussed at the end of Chapter \ref{ch:smbo} [NOTE: add this important discussion to ch2], the expected improvement function (Eq. \ref{}), whose maximization comrpises the third stage in the process, is a statistical (i.e., mathematical) property which is entirely determined by $\hat{y}$ and $\hat{err}_{\hat{y}}$. This all amounts to say that on the most basic level, the set of SMBO functions varies only in the modelling dimension, the second step of the SMBO process.
+
+In this characterization, an SMBO process is defined by its modelling module. In the EGO function, the DACE model fills this role. Thus, a simple way to think about SMBO in general is as EGO, but with a different model than DACE. The code constructed for this thesis, discussed in Chapter \ref{ch:code} and documented in the code appendix [CITE], is modularized with the primary goal of constructing SMBO processes in this way. That code, like step two above, requires some modeller,
+
+\begin{equation}\ref{eq:modeller}
+M:\ (\mathbf{X},\mathbf{Y})\rightarrow (\hat{y},\hat{err}_{\hat{y}}),
+\end{equation}
+which maps sets of sample points (denoted by vector of every tested input $\mathbf{X}$ and the vector of corresponding outputs $\mathbf{Y}$) to predictor and predicted error functions.
+
+First, I'll discuss simple generalizations of EGO/DACE as presented in Jones et al---notably, considering discrete input dimensions.
+
+Then I will survey a few alternative choices of modeller $M$. This discussion will highlight that there are many algorithmic candidates for producing a prediction function given a set of sample points, but in many cases a predicted error function is less accessible. For example, a neural network produces a prediction model from a set of sample points via supervised learning, but it is at first unclear how to quantify the accuracy of that network's prediction on a novel sample.
+
+
+\section{A Rival to Genetic Algorithms}
+
+(Me jotting down an idea): There is a cool conceptual case to be made that SMBO is a `super GA' (my friends at the PSU lab call it such). Basically, a new sample point in a GA is chosen by random combination and mutation of two previous sample points. SMBO is much more intelligent than random combination/mutation. In the evolution analogy, GAs are like normal two-parental evolution. But if you see SMBO through the evolutionary lens, you could say that each new organism born to the population, rather than being a random child of two parents, is a deliberate, carefully engineered hybrid of all previous organisms who have ever lived. While GAs throw away information with every generation, SMBO reasons about all previous evaluations of the fitness/objective function. SMBOs are also intuitively much better at getting around local optima than GAs, whose only hope of escaping a local optimum is a perfectly-directed random mutation.
+
+
+\section{The Algorithm Selection Problem}
+
+It is this problem that highlights the relevance of SMBO to machine learning today---given a particular problem or problem type, and a set of algorithms which are candidates for solving that problem, how to you select the best solver? This problem should be of obvious importance to anyone who has practiced machine learning---indeed, it is a large part of the task of solving problems with ML in practice.
+
+I have a good source by Michael Littman (I took an intro to ML MOOC from him!) about solving the ALP with reinforcement learning---I'll steal from him some arguments/citations for why this problem is so important, and emphasize why the ``sample the objective function to maximize expected improvement'' component of SMBO balances exploration/exploitation to make it more desirable than Littman's methods.
