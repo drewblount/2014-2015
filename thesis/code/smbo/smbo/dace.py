@@ -1,12 +1,11 @@
 """
-.. module:: smb_optimizer
+.. module:: dace
    :platform: Unix, Windows
    :synopsis: A function/class hybrid to describe individual instances of DACE predictors
 
 .. moduleauthor:: Drew Blount <dblount@reed.edu>
 
 """
-import smbo.da
 
 
 class dace_model:

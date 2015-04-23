@@ -3,14 +3,23 @@
 \section{The Bootstrapping Cycle}
 
 This thesis will explore several algorithms that are classified as sequential model-based optimizers \cite{hutter_sequential_2011, hamadi_autonomous_2012, jones_efficient_1998, rasmussen_gaussian_2006}. %note: get more specific with those cites. should be a handful of specific papers presenting particular SMBO things
-They differ in the space of model functions they explore, their assumptions regarding determinism, and their procedural relationship to the objective functions being optimized. % clarification: such as some algorithms selecting one sample point, others more.
+They differ in the types of objective functions they can optimize, their modelling strategies, and their procedural relationship to the objective functions being optimized. % clarification: such as some algorithms selecting one sample point, others more.
 Nonetheless, they can all be roughly summarized by a three-part loop,
 
-\begin{enumerate} \label{smbo_loop}
+\begin{minipage}{\textwidth}
+\begin{framed}
+
+\begin{enumerate} 
 \item the objective function is evaluated at some set of input points
-\item a working model of the objective function (the ``predictor function'') is generated from the evaluated input-output pairs
-\item new points are chosen to be evaluated by the objective function, so that the working model's utility in optimizing the objective function will be maximized.
+\item a working model of the objective function (the ``predictor function'') is generated from the known data
+\item new input points are chosen to be evaluated by the objective function, so that the working model's utility in optimizing the objective function will be maximized.
 \end{enumerate}
+\end{framed}
+
+\captionof{figure}{The three stages of the SMBO loop}
+\label{fig:smbo_loop}
+\end{minipage}
+
 
 [note: should the above be in pseudocode? It would at least be nice to reference it like a figure.]
 

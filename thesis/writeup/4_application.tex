@@ -1,13 +1,13 @@
 \chapter{A Python Package for SMBO} \label{ch:code}
 
 
-In exploring this topic, I have built a Python package for performing sequential model-based optimization, simply named \texttt{smbo}. My goal in making it was to construct well-made code, that will be immediately useful as a pedagogical tool (indeed, it was used to generate several figures in this thesis \ref{}), open source and available online, and documented and designed such that further development of the code base is easy; perhaps some day \texttt{smbo} will evolve into a cutting-edge free optimization package, used to optimize all sorts of blackbox functions all over the globe, maintained by an international team of elite open-source hackers. Though at present the package only implements the EGO algorithm, its modular, hybrid object-oriented/functional construction allows for further SMBO processes to be defined and implemented easily. \texttt{smbo} is available on the Python Package Index, and can be downloaded and installed with a single command on any computer with Python 2.7.9 or later.\footnote{\texttt{sudo pip install smbo}}
+In exploring this topic, I have built a Python package for performing sequential model-based optimization, simply named \texttt{smbo}. My goal in making it was to construct well-made code, that will be immediately useful as a pedagogical tool (indeed, it was used to generate several figures in this thesis, such as Fig. \ref{}), open source and available online, and documented and designed such that further development of the code base is easy. Perhaps some day \texttt{smbo} will evolve into a cutting-edge free optimization package, used to optimize all sorts of blackbox functions all over the globe, maintained by an international team of elite open-source hackers. Presently, the project is more humble. As of submitting this thesis, the package only implements the EGO algorithm, though its modular, hybrid object-oriented/functional construction allows for further SMBO processes to be defined and implemented easily. \texttt{smbo} is available on the Python Package Index, and can be downloaded and installed with a single command on any computer with Python 2.7.9 or later.\footnote{\texttt{sudo pip install smbo}}
 
 As a good portion of the work in this thesis went into software design and engineering (subjects not taught at Reed College), I will here present the code behind the \texttt{smbo} package on the highest level. This discussion will inform the reader's mathematical understanding of SMBO processes, covering design decisions, identifying runtime bottlenecks, and the crucial components upon which the performance of any SMBO implementation rely. This chapter will also serve as an introduction to the official documentation of the \texttt{smbo} package, which is included as an appendix to this thesis.
 
-\section{Design}\ref{sec:design}
+\section{Design}\label{sec:design}
 
-The three-stage SMBO cycle, illustrated earlier in Figure \ref{fig:smbo_cycle}, presents a clear opportunity for a modular implementation of sequential model-based optimizers. It can be conceived of mathematically as three functional components: an objective function $F$, a model-producing function $M$, and a sample-point-selecting function $S$. Where $X$ denotes a point in $F$'s input space, and $\mathbf{X},\mathbf{Y}$ represent vectors of $X$s and their corresponding $F(X)$s, the three stages can expressed functionally as,
+The three-stage SMBO cycle, illustrated earlier in Figure \ref{fig:smbo_cycle}, presents a clear opportunity for a modular implementation of sequential model-based optimizers. I will present the \texttt{smbo} class as it relates to these thee stages, which can be conceived of mathematically as three functional components: an objective function $F$, a model-producing function $M$, and a sample-point-selecting function $S$. Where $X$ denotes a point in $F$'s input space, and $\mathbf{X},\mathbf{Y}$ represent vectors of $X$s and their corresponding $F(X)$s, the three stages can expressed functionally as,
 
 \begin{enumerate}
 \item $F(\mathbf{X})=\mathbf{Y}$
@@ -15,8 +15,9 @@ The three-stage SMBO cycle, illustrated earlier in Figure \ref{fig:smbo_cycle}, 
 \item $S(\hat{y},\hat{err}_{\hat{y}}) = x_{new}$.
 \end{enumerate}
 
+\subsection{\texttt{smb$\_$optimizer}}
 
-The technical goal of the \texttt{smbo} package is to provide a class, called \texttt{smb$\_$optimizer}, which generically handles and passes arguments between the above three functions to perform the iterative SMBO process. Since this thesis is largely concerned with the case where $S$ is defined by expected improvement maximization (Section \ref{sec:exp_imp}), this stage of the process is implemented by a fixed class method of \texttt{smb$\_$optimizer}. The other two functions, $F$ and $M$, are callables passed upon initialization to the \texttt{smb$\_$optimizer} class. This information is summarized on the familiar SMBO loop in Figure \ref{fig:smbo_loop_II}, and the technical details of the \texttt{smb$\_$optimizer} class's initialization are described in Figure \ref{fig:smb_optimizer} .
+The technical goal of the \texttt{smbo} package is to provide a class, called \texttt{smb$\_$optimizer}, which generically handles and passes arguments between the above three functions to perform the iterative SMBO process. Since this thesis is largely concerned with the case where $S$ is defined by expected improvement maximization (Section \ref{sec:exp_imp}), this stage of the process is implemented by a fixed class method of \texttt{smb$\_$optimizer}, called \texttt{sample}. The other two functions, $F$ and $M$, are callables passed upon initialization to the \texttt{smb$\_$optimizer} class. This information is illustrated on the familiar SMBO loop in Figure \ref{fig:smbo_loop_II}. Figure \ref{fig:smb_opt_doc} is a summary of the official documentation for the \texttt{smb$\_$optimizer} class, listing all of the high-level methods used in iterating the SMBO loop.
 
 \begin{figure}[h]
 	\centering
@@ -27,22 +28,22 @@ The technical goal of the \texttt{smbo} package is to provide a class, called \t
 \end{figure}
 
 
-The EGO algorithm, our prototypical SMBO process, is defined by a particular choice of modeller $M$, i.e., the DACE model. This is accomplished by the module \texttt{dace}, which is the primary component of \texttt{smbo} meriting the description ``functional/object-oriented hybrid'' mentioned in the introduction to this chapter. \texttt{dace} contains two pieces: a class \texttt{dace$\_$model} which has various methods to implement the calculations defined and derived in Chapter \ref{ch:ego}, including the formulation of $\hat{y}$ and $\hat{err}_{\hat{Y}}$; and a functional wrapper $dace_func$ which behaves exactly as the ideal functional modeller $M(\mathbf{X},\mathbf{Y}) = (\hat{y},\hat{err}_{\hat{y}})$. That is to say, \texttt{dace$\_$func} takes as input two vectors $(\mathbf{X},\mathbf{Y})$, uses them to initialize an instance of the \texttt{dace$\_$model} class, then retrieves $\hat{y}$ and $\hat{err}_{\hat{Y}}$ using methods of that \texttt{dace$\_$model}, returning them as output.
-
-There were two factors that influenced the decision to implement the DACE model in this function-wrapped-class kind of way.
-First, there is the standard conceptual appeal of functional programming---here, we can appreciate the mathematical purity of a code module that behaves exactly as the generic modelling function $M$ described above, mapping sample points to predictive models. This also makes clear the modular distinction between the central \texttt{smb$\_$optimizer} and its modeller---as far as an \texttt{smb$\_$optimizer} instance is concerned, the modeller is a black box which produces models from sample points. On the other hand, the functional paradigm makes it awkward to allow an \texttt{smbo} package user to experiment with the specifics of a particular modelling function, e.g. to see the results of modifying traditionally internal DACE parameters, such as the characteristic parameter vectors $\mathbf{P}$ and $\mathbf{\theta}$ (the reader should see Section \ref{sec:dace} if they've forgotten why one might want to play with these parameters). 
-
-
 % The smb_optimizer documentation
 \begin{minipage}{\textwidth}
 \begin{framed}
 \input{docs/smb_optimizer.tex}
 \end{framed}
 
-\captionof{figure}{A summary of the documentation of the \texttt{smb$\_$optimizer} class. To find a global minimum, initialize an \texttt{smb\_optimizer}, call \texttt{take\_samples}, then look at \texttt{f\_min}.}\label{fig:smb_optimizer}
+\captionof{figure}{A summary of the documentation of the \texttt{smb$\_$optimizer} class. To find a global minimum, initialize an \texttt{smb\_optimizer}, call \texttt{take\_samples}, then look at \texttt{f\_min}.} \label{fig:smb_opt_doc}
 
 \end{minipage}
 
+
+
+
+The EGO algorithm, our prototypical SMBO process, is defined by a particular choice of modeller $M$, i.e., the DACE model. This is accomplished by a DACE function \emph{and} a class in the \texttt{smbo.modellers} module. This is the primary component of \texttt{smbo} meriting the description ``functional/object-oriented hybrid'' mentioned in the introduction to this chapter. 
+
+The class \texttt{dace$\_$model} has various methods to implement the calculations defined and derived in Chapter \ref{ch:ego}, including the formulation of $\hat{y}$ and $\hat{err}_{\hat{Y}}$. The functional wrapper $dace_function$ behaves exactly as the ideal functional modeller $M(\mathbf{X},\mathbf{Y}) = (\hat{y},\hat{err}_{\hat{y}})$. That is to say, \texttt{dace$\_$function} takes as input two vectors $(\mathbf{X},\mathbf{Y})$, uses them to initialize an instance of the \texttt{dace$\_$model} class, then retrieves $\hat{y}$ and $\hat{err}_{\hat{Y}}$ using methods of that \texttt{dace$\_$model}, returning them as output. A summary of the documentation of \texttt{dace$\_$function} and \texttt{dace$\_$model} is shown in \ref{fig:dace_doc}.
 
 
 % The dace documentation
@@ -51,12 +52,23 @@ First, there is the standard conceptual appeal of functional programming---here,
 \input{docs/dace.tex}
 \end{framed}
 
-\captionof{figure}{Selected documentation for the \texttt{dace} model class.}\label{fig:dace_doc}
+\captionof{figure}{A summary of the documentation of the \code{dace} model class. An object of class \code{smb\_optimizer} (Figure \ref{fig:smb_opt_doc}) would take \code{dace\_function} as its \code{modeller} argument. Even though the \code{smb\_optimizer} is only aware of this function, each function call initializes a \code{dace} object, which stays alive behind the scenes as long as its \code{predict} and/or \code{pred\_err} methods are being actively called, which is often, as these form the \code{pred\_y} and \code{pred\_err} attributes of the \code{smb\_optimizer}.} \label{fig:dace_doc}
 
 \end{minipage}
 
+
+
+There were two factors that influenced the decision to implement the DACE model in this function-wrapped-class kind of way. First, there is the standard conceptual appeal of functional programming---here, we can appreciate the mathematical purity of a code module that behaves exactly as the generic modelling function $M$ described above, mapping sample points to predictive models. This also makes clear the modular distinction between the central \texttt{smb$\_$optimizer} instance and its \texttt{modeller} attribute---as far as an \texttt{smb$\_$optimizer} instance is concerned, the modeller is a black box function which produces models from sample points. On the other hand, the functional paradigm makes it awkward to allow an \texttt{smbo} package user to experiment with the specifics of a particular modelling function, e.g. to see the results of modifying traditionally internal DACE parameters, such as the characteristic parameter vectors $\mathbf{P}$ and $\mathbf{\theta}$, which define the shape of the response surface, as described in Section \ref{sec:dace}. For example, the statefulness of the \texttt{dace} class allowed my advisor and I to build our intuition regarding the DACE model, by modifying the \texttt{dace} class instance underlying a particular \texttt{smb$\_$optimizer}, and seeing the effects of that change on the plots produced by the \texttt{smb$\_$optimizer}.
+
+
+
+
+
+
 \section{Optimization Subroutines}
-The EGO algorithm as implemented by \texttt{smbo.smb$\_$optimizer} and \texttt{smbo.dace} together involves two global optimization steps as subroutines: the fitting of the DACE model by maximizing the likelihood of its characteristic parameters (Section \ref{sec:max_lik}), and the SMBO-standard selection of successive sample points by maximizing the expected improvement function. These two steps are the main performance and runtime bottlenecks of the SMBO algorithm, at least as implemented by my \texttt{smbo} package.
+Each SMBO loop of the EGO algorithm involves two global optimization steps as subroutines. First, the actual fitting of a DACE model to the data is done by selecting the parameters $\mathbf{P}$ and $\mathbf{Q}$ to maximize the likelihood of the data. This process is described in Section \ref{sec:max_lik}, and implemented in \texttt{smbo} with the class method \texttt{smbo.models.dace_class.exp_improvement}). Once a model is fit, the next sample point is selected with the SMBO-standard method of maximizing the expected improvement function, \texttt{smbo.smb_optimizer.exp_improvement}. These two steps are the main performance and runtime bottlenecks of the EGO algorithm as implemented by the \texttt{smbo} package.
+
+
 
 I'll discuss why I say they are bottlenecks.
 

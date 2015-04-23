@@ -42,6 +42,31 @@ def latin_hypercube(m, k, bounds=None, rand_sampler=random.random):
     ]
       
     return samples
+
+def diag(m, k, bounds=None):
+    """
+    Args:
+        m (int): the number of desired sample points
+        k (int): the dimension of input space
+        bounds (list): the :math:`k` min-max tuples describing the function domain as a :math:`k`-rectangle. Defaults to the unit :math:`k`-cube.
+            
+    Returns:
+        list: An :math:`m`-list of :math:`k`-vectors, representing evenly spaced points on the diagonal of the bound-rectangle.
+    """
+    if bounds==None:
+        bounds=[[0,1]for i in range(k)]
+    
+    bin_width = [float(bounds[dim][1]-bounds[dim][0])/m for dim in range(k)]    
+    samples = [
+        [
+            (samp_no+0.5)*bin_width[dim]+bounds[dim][0]
+            for dim in range(k)
+        ]
+        for samp_no in range(m)
+    ] 
+    return samples
+    
+
     
 #LH = latin_hypercube(3,2)
 #print(LH)

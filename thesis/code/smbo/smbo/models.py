@@ -8,6 +8,7 @@
 """
 
 from smbo import (
+    basinhopping,
     la,
     minimize, 
     norm, 
@@ -27,8 +28,7 @@ log = logging.getLogger('ego.log')
 
 class dace:
     """
-    A little hefty to be simply a function, this class (which behaves as a function because of its __apply__ method)
-    fits a DACE model to provided sample points
+    A class that implements the DACE model to produce predictor and error surfaces from sample points
     """
     
     # nearzero values for Q parameters lead to singular matrices, hence
@@ -41,7 +41,7 @@ class dace:
             Y (list): a list of observed objective values
         Returns:
             tuple:
-                (pred_y,pred_err): two functions, each k-to-1, where k is the dimension of the input space, representing the dace predictor surface and predicted error at each point in input space
+                (pred_y,pred_err): two functions, each k-to-1, where k is the dimension of the input space, representing the DACE predictor and predicted error at any point in input space.
         """ 
         self.X=X
         self.Y=Y
@@ -55,16 +55,13 @@ class dace:
         # now sets P and Q to maximize likelihood (first, dummy variables)
         self.P = self.Q = [1.5 for i in range(self.k)]
         self.max_likelihood()
+        print('P and Q have been set to maximize the likelihood equation.\n\tP = '+str(self.P)+'\n\tQ = '+str(self.Q))
+        
     
     # distance in input-space (x1 is an array; an input vector)
     def dist(self, x1, x2):
         """
-        Args:
-            x1 (list): a coordinate in the domain
-            x2 (list): a coordinate in the domain
-        Returns:
-            float:
-                the parameterized distance between x1 and x2
+        Returns the parameterized distance between two points in input space
         """
         return np.sum( [ 
             self.Q[i] * 
@@ -168,9 +165,8 @@ class dace:
         Args:
             new_P (list): an :math:`n`-vector resetting the :math:`p` parameter of the DACE model
             new_Q (list): an :math:`n`-vector resetting the :math:`q` or :math:`\theta` parameter of the DACE model
-        Returns:
-            float:
-                the likelihood of the current DACE params P and Q, given the data X and Y
+ 
+        Returns the statistical likelihood of the current DACE parameters :code:`P' and :code:`Q', given the data :code:`X` and :code:`Y`.
         """
         if new_P!=None: self.P=new_P
         if new_Q!=None: self.Q=new_Q
@@ -202,18 +198,36 @@ class dace:
         if not self.Q: self.Q = [1.5 for i in range(self.n)]
         
         # the function to be minimized. note that P is the first half of z, Q the second
-        def neg_conc(z): return (-1 * self.conc_likelihood(z[:self.k],z[self.k:]))
+        def neg_conc(z): 
+            return (-1 * self.conc_likelihood(z[:self.k],z[self.k:]))
+        
+        
+        def special_neg_conc(z):
+            # a function we wish to globally optimize
+            for i in range(len(z)):
+                s = 100
+                if i < self.n and z[i]<1:
+                    return s*(1-z[i])
+                elif i < self.n and z[i]>2:
+                    return s*(z[i]-2)
+                elif i>= self.n and z[i]<self.eps:
+                    return s*(self.eps-z[i])
+            return neg_conc(z)
+        
         
         # the minimizer needs an initial coord
         z0 = self.P + self.Q
         
-        res = minimize(neg_conc, z0, method='L-BFGS-B',bounds=bounds)
+        minimizer_kwargs = {"method": "COBYLA"}
+        res = basinhopping(special_neg_conc, z0, minimizer_kwargs=minimizer_kwargs,niter=50,T=0.1)        
+        #res = minimize(neg_conc, z0, method='L-BFGS-B',bounds=bounds)
+        #res = minimize(neg_conc, z0, method='SLSQP',bounds=bounds)
+        
+        print('took ' + str(res.nfev) + ' evaluations of likelihood function to set P and Q.')
         # now save the output to P and Q, and reset lazyprops
         self.P = res.x[:self.k]
         self.Q = res.x[self.k:]
-        reset_lps(self)
-        print('P and Q have been set to maximize the likelihood equation.')
-        
+        reset_lps(self)        
         return res
        
     
@@ -238,7 +252,7 @@ class dace:
         Returns:
             float:
                 the predicted function value at x_new
-        This is computed using the so-called best linear unbiased predictor,  Jones Eq. 7
+        This is computed using the so-called best linear unbiased predictor,  Jones Eq. 7. Variables such as the correlation matrix :math:'\mathbb{R}' are saved as they are copmuted lazily by this and other methods.
         """
         r = self.corr_vector(x_new)
         R_inv_r = self.R_inv.dot(r)
