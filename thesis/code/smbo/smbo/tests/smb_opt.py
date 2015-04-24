@@ -34,7 +34,9 @@ def sample_test():
         return [[1.2401768021409674], [6.412180558905743], [4.982912130389163], [8.269898346390113], [3.3601092758327518], [9.629361060595107], [5.207781969807999], [2.0566450769172135]]
     h = lher()
     print('LH is:\n'+str(h))'''
-    test = smb_optimizer(bounds, sinusoparaboloid(1,3,width/2+0.5,2), dace_function, brute_optimize_EI=False)
+    #test = smb_optimizer(bounds, sinusoparaboloid(1,3,width/2+0.5,2), dace_function, brute_optimize_EI=False)
+    test = smb_optimizer(branin_domain(), branin, dace_function, brute_optimize_EI=False,res=0.5)
+    
     print('Testing the smbo package:')
     #print('    X = '+str(test.X))
     #print('    Y = '+str(test.Y))
@@ -42,7 +44,7 @@ def sample_test():
     #print('    pred_err = '+str(test.pred_err))
     #print('    pred_func correctly predicts sample points: ' +str(test.check_memory()))
     #print('    next best sample point: ' + str(test.choose_sample()))
-    test.take_samples(0.05,20,plot_dims=0)
+    test.take_samples(0.05,200,plot_dims=[0,1])
     #test.plot1d(show_plot=False,plot_objective=True,plot_err=True,fname='basinhopping.pdf')
     
 print('name is '+__name__)
