@@ -100,7 +100,7 @@ class smb_optimizer:
         """
         Stores predicted function error values for each point on the plot_point grid
         """
-        scale=0.3
+        scale=1
         if self.logger:
             buff = [scale*self.pred_err(point) for point in self.domain_buffer]
             self.logger.info('error buffer: '+str(buff))
@@ -141,7 +141,7 @@ class smb_optimizer:
         """
         y = self.pred_y(x_new)
         # improvement over current minimum
-        improvement = max(self.f_min['y'] - y,0.0)
+        improvement = self.f_min['y'] - y
         
         # s
         err = self.pred_err(x_new)
@@ -230,7 +230,7 @@ class smb_optimizer:
         if type(plot_dims)==int:
             return self.plot1d
     
-    def take_samples(self, stopping_improvement=0.01, max_iters=100, plot_dims=None, fname='plots/', randomize=False,verbose=True):
+    def take_samples(self, stopping_improvement=0.01, max_iters=100, plot_dims=None, fname='plots/',verbose=True):
         """
         Args:
             stopping_improvement(float): the iterative process terminates if the maximum expected improvement nowhere is larger than this value
@@ -249,7 +249,7 @@ class smb_optimizer:
                 print('expected improvement there: '+str(self.exp_improvement(self.next_sample)))
             # look at the expected improvement of the best sample point
             if self.exp_improvement(self.next_sample)<=stopping_improvement: return
-            self.sample(randomize)
+            self.sample()
             if (type(plot_dims)==int):
                 self.plot1d(fname=fname+str(i+1)+'.pdf',plot_objective=True)
             
@@ -289,7 +289,7 @@ class smb_optimizer:
 
         plt.show()
         
-    def plot1d(self, dim=0, plot_objective=False, plot_err=True, plot_improvement=False, plot_next_sp=False, show_plot=False, fname=None):
+    def plot1d(self, dim=0, plot_objective=False, plot_err=True, plot_improvement=True, plot_next_sp=True, show_plot=False, fname=None, legend=False):
         """
         Args:
             plot_objective (bool): whether the objective function should be plotted. This is only feasible if that function can be called enough times to generate a smooth plot
@@ -346,15 +346,17 @@ class smb_optimizer:
             exp_imp_line, = ax2.plot(pred_range, imps, color='r')
             ax2.set_ylabel('expected improvement', color='r')
             for tl in ax2.get_yticklabels():
-                tl.set_color('r')            
+                tl.set_color('r')
+            ax2.axis([x_min, x_max, 0, 1.5])            
                 
         # plot the actual sample points
         points = ax.plot([x[dim] for x in self.X],self.Y, 'ko',label="sample points")
         # plot a vertical dotted line at the next sample point
         if plot_next_sp:
             point = ax.axvline(self.next_sample, color='k', linestyle='dotted')
-           
-        plt.legend(loc=9,numpoints=1)
+        
+        if legend:   
+            plt.legend(loc=9,numpoints=1)
          
         if fname:
             # bbox is tight bc I'll add margins in latex if I want to, thankyouverymuch

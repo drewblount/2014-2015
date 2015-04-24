@@ -66,13 +66,35 @@ There were two factors that influenced the decision to implement the DACE model 
 
 
 \section{Optimization Subroutines}
-Each SMBO loop of the EGO algorithm involves two global optimization steps as subroutines. First, the actual fitting of a DACE model to the data is done by selecting the parameters $\mathbf{P}$ and $\mathbf{Q}$ to maximize the likelihood of the data. This process is described in Section \ref{sec:max_lik}, and implemented in \texttt{smbo} with the class method \texttt{smbo.models.dace_class.exp_improvement}). Once a model is fit, the next sample point is selected with the SMBO-standard method of maximizing the expected improvement function, \texttt{smbo.smb_optimizer.exp_improvement}. These two steps are the main performance and runtime bottlenecks of the EGO algorithm as implemented by the \texttt{smbo} package.
+Each SMBO loop of the EGO algorithm involves two global optimization steps as subroutines. First, the actual fitting of a DACE model to the data is done by selecting the parameters $\mathbf{P}$ and $\mathbf{Q}$ to maximize the likelihood of the data. This process is described in Section \ref{sec:max_lik}, and implemented in \texttt{smbo} with the class method \texttt{smbo.models.dace\_class.exp\_improvement}. Once a model is fit, the next sample point is selected with the SMBO-standard method of maximizing the expected improvement function, \texttt{smbo.smb\_optimizer.exp\_improvement}. It is somewhat striking that in the process of globally optimizing an objective function, these two functions, both defined in terms of the objective data, are optimized many times as subroutines. Of course, the efficiency of the entire SMBO optimization process rests on the assumption that it is much easier to evaluate and optimize these models, of likelihood and expected improvement, than to evaluate the black box objective function. 
+
+These two optimizations can take advantage of known mathematical properties of the functions at hand; they do not share the black box assumption of the larger optimization task. The methods of \cite{jones_efficient_1998} in fact don't even optimize the expected improvement function explicitly, but a mathematically simpler function that underestimates improvement and is easier to optimize (see Section 4.1 of \cite{jones_efficient_1998}). It is worth noting that this craftiness is intended to find a good solution more quickly, not necessarily a better solution, to the expected improvement optimization problem. Despite the computational benefits of this approach, several considerations led to the use of fairly generic function optimization methods within these optimization subroutines of \texttt{smbo}.
+
+Currently, these optimizations are handled by methods of the popular and trusted [how could I cite this?] SciPy library for Python. A major reason to use SciPy is pragmatic: it can be trusted to find good solutions quickly, both by the user of the \texttt{smb\_optimizer} class and and the prospective user or contributor to the \texttt{smbo} package. As my ambitious goal is for \texttt{smbo} to eventually be an active open-source library, there is also some subjective advantage to affiliating with the most popular optimization library in the Python open-source community; to use the SciPy brand. Most importantly though, this construction is modular in a way that the perhaps craftier method of \citep{jones_efficient_1998} is not; the \texttt{smb\_optimizer} class chooses the next sample points in a way that is agnostic to the mathematics underlying the modeller, and simply dependent on the model surface and its expected error. 
+
+Optimization is a notoriously difficult problem to do well and efficiently (hence the original motivation of this thesis), so it is perhaps unsurprising that the likelihood and expected improvement optimizations have been the worst bottlenecks in the SMBO process. This has been the case both in terms of runtime and overall optimization performance. A slow optimizer subroutine obviously increases the time it takes for a single SMBO loop to be computed, but more importantly, a subroutine that returns significantly sub-optimal solutions to the likelihood and expected improvement problems produces bad predictive models. An example of this is illustrated by example in Fig. \ref{fig:opt_compare}, which shows two DACE models fit to the same data, using identical methods except for specific choice of SciPy optimizer to maximize the likelihood of parameters $P$ and $Q$.
+
+\begin{figure}
+        \centering
+        \begin{subfigure}[t]{0.5\textwidth}
+                \includegraphics[width=\textwidth]{images/likelihood_opt_ex/bad}
+                \caption{L-BFGS-B\cite{}, as implemented by Scipy\linebreak[0].optimize\linebreak[0].minimize. }
+        \end{subfigure}%
+        ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+          %(or a blank line to force the subfigure onto a new line)
+        \begin{subfigure}[t]{0.5\textwidth}
+                \includegraphics[width=\textwidth]{images/likelihood_opt_ex/good}
+                \caption{basinhopping\cite{} global optimization algorithm using COBYLA\cite{} locally, as implemented by Scipy\linebreak[0].optimize\linebreak[0].basinhopping.}
+        \end{subfigure}
+        \caption{Two DACE predictor models fitted to identical sample points, that differ only in their method (labelled) of numeric maximization of the parameter likelihood function (Eq. \ref{eq:conc_likelihood}). Note that the right prediction model is not only more accurate than the left, but its expected error is smaller everywhere; the prediction is more confident.}\label{fig:opt_compare}
+\end{figure}
+
+The optimality of SMBO results depends indirectly, but crucially, on the optimality of the results of these sub-optimizers. The cyclical process works because of each successive model's predictive power in finding the global optimum. The loop is run until, by considering the expected improvement surface, our confidence in having found the global optimum passes a certain threshold. From this we can see that bad predictive models make for an inefficient SMBO loop, because expected improvement is monotonically fixed to predicted error, i.e., more model error means more expected improvement. Poor sub-optimizers make for bad models, which have poor predictive power, which means the SMBO loop will be iterated more times before halting, meaning more calls of the objective function. So, a bad optimizer subroutine will require the objective function to be evaluated more times to get a satisfactory solution to the overall optimization problem. As the premise of this thesis involves a too-expensive blackbox function, this is, of course, bad.
+
+%
+%\subsection{Basic Runtime Analysis} \label{sec:runtime}
+
+%Because the premise of this thesis is of an inconveniently-expensive blackbox function, the relevant runtime parameter in this analysis will be the number of objective function evaluations $n$. For convenience, I'll assume that each cycle of the SMBO loop selects only one new sample point, so $n$ is equal to the number of overall SMBO loop iterations.
 
 
-
-I'll discuss why I say they are bottlenecks.
-
-Jones et al were cleverer about their optimizations, but they used DACE-specific reasoning. It is likely that alternative model choices will be ripe for similarly fruitful analysis.
-
-Despite computational costs, it is important to remember (reference ProtoLife) that the blackbox functions being optimized could well be just orders and orders of magnitude harder to compute, e.g., when your blackbox function involves a robot performing 600 chemical experiments.
 
