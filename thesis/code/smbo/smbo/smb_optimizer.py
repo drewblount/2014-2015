@@ -68,7 +68,11 @@ class smb_optimizer:
         # because it is only once, no need to store a self.init_sampler
         if not init_sampler:
             # use Jones' convention of 2k+2 sample points for the 2k+2 free variables in the DACE model
-            self.X=samplers.latin_hypercube(2*self.k+2,self.k,self.domain)
+            if   self.k == 1: self.X=samplers.latin_hypercube(4,self.k,self.domain)
+            elif self.k == 2: self.X=samplers.latin_hypercube(21,self.k,self.domain)
+            elif self.k == 3: self.X=samplers.latin_hypercube(33,self.k,self.domain)
+            else: self.X=samplers.latin_hypercube(10*k,self.k,self.domain)
+            
         else:
             self.X=init_sampler()
         self.n = len(self.X)
@@ -250,21 +254,25 @@ class smb_optimizer:
             # look at the expected improvement of the best sample point
             if self.exp_improvement(self.next_sample)<=stopping_improvement: return
             self.sample()
+            # 1d plot
             if (type(plot_dims)==int):
                 self.plot1d(fname=fname+str(i+1)+'.pdf',plot_objective=True)
+            # 2d plot
+            elif (len(plot_dims)==2):
+                self.plot2d(fname='2d_'+fname+str(i+1)+'.pdf')
             
-    def plot2d(self):
+    def plot2d(self, plotfreq=1, show_plot=False, fname='plots/2dtestplot.pdf'):
                 
         xs = np.arange(self.domain[0][0], self.domain[0][1], self.res)
         ys = np.arange(self.domain[1][0], self.domain[1][1], self.res)
         xs, ys = np.meshgrid(xs, ys)
         def pred(i,j):
-            if (i*len(xs[0])+j)%100==0:
-                print('making ' +str(i*len(xs[0])+j) + 'th prediction')
+            #if (i*len(xs[0])+j)%100==0:
+                #print('making ' +str(i*len(xs[0])+j) + 'th prediction')
             return self.pred_y([xs[i][j],ys[i][j]])
             
             
-        print('about to make Z')
+        #print('about to make Z')
             
         Z = [[pred(i,j) for j in range(len(xs[i]))] for i in range(len(xs))]
                 
@@ -283,11 +291,15 @@ class smb_optimizer:
         print('got the Z')
         plt.figure()
         CS = plt.contour(xs, ys, Z,20)
+        
+        points = plt.plot([x[0] for x in self.X],[x[1] for x in self.X], 'ko',label="sample points")
+        
+        
         print('contoured the thing')
         plt.title('branin model test n = ' + str(self.n))
-        plt.savefig('testfig', bbox_inches='tight')
+        if fname: plt.savefig(fname, bbox_inches='tight')
 
-        plt.show()
+        if show_plot: plt.show()
         
     def plot1d(self, dim=0, plot_objective=False, plot_err=True, plot_improvement=True, plot_next_sp=True, show_plot=False, fname=None, legend=False):
         """

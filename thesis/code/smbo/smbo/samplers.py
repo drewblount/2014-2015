@@ -40,8 +40,26 @@ def latin_hypercube(m, k, bounds=None, rand_sampler=random.random):
             for dim in range(k)
         ] for bin_no in range(m)
     ]
+    return samples  
+"""          
+    # for each dimension, store the m centers of each bin
+    bin_width = [float(bounds[dim][1]-bounds[dim][0])/m for dim in range(k)]
+    bin_center = [[bin_width[dim] * (bin_no+0.5) for bin_no in range(m)] for dim in range(k)]
+    
+    # standard deviations are 1/6 of bin width for rough 95% of things landing within bins
+    bin_stdev = [bw/6 for bw in bin_width]
+    
+    samples = [
+        [
+            random.gauss(bin_center[dim][bins[dim][bin_no]],bin_stdev[dim])
+            for dim in range(k)
+        ] for bin_no in range(m)
+    ]
       
     return samples
+"""
+      
+    
 
 def diag(m, k, bounds=None):
     """
