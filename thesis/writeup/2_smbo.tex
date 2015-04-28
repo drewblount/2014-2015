@@ -1,22 +1,24 @@
 \chapter{The SMBO Paradigm}\label{ch:smbo}
 
-To formalize the notion of blackbox optimization, consider an expensive blackbox function $f$. I will also refer to $f$ as the \emph{objective function}, a term from the optimization and statistics communities. Say that $f$ has been evaluated on the inputs, or \emph{sample points}, $x_1,\ x_2, ... ,\ x_n$. These evaluations produce the observed outputs $y_i=f(x_i)$. If $\mb{x}=\{x_1, ... ,\ x_n\}$ and $\mb{y}=\{y_1, ...,\ y_n\}$, I'll refer to the pair $(\mb{x},\mb{y})$ as the \emph{sample data}. Because we are concerned with global optimization---without loss of generality, say minimization\footnote{In the optimization community, it is common to speak only of minimization, and the two words are used somewhat interchangeably. For example, the most popular Python library for optimization, \texttt{scipy.optimize}, contains only minimization routines. Of course, the task of maximizing a function $f$ is the same as minimizing its negative $-f$. }---the goal is to find an $x$ such that $f(x)<f(x')\ \ \forall\ x' \ne x$, while evaluating $f$ as few times as possible. This chapter describes formally how the SMBO process addresses this challenge. I will define notation as it is introduced, though for reference I have included a reference table of variable names and definitions in Figure \ref{fig:notation} below.
+To formalize the notion of blackbox optimization, consider an expensive blackbox function $f$. I will also refer to $f$ as the \emph{objective function}, a term from the optimization and statistics communities. Say that $f$ has been evaluated on the inputs, or \emph{sample points}, $x^1,\ x^2, ... ,\ x^n$. These evaluations produce the observed outputs $y^i=f(x^i)$. If $\X=\{x^1, ... ,\ x^n\}$ and $\Y=\{y^1, ...,\ y^n\}$, I'll refer to the pair $(\X,\Y)$ as the \emph{sample data}. Because we are concerned with global optimization---without loss of generality, say minimization\footnote{In the optimization community, it is common to speak only of minimization, and the two words are used somewhat interchangeably. For example, the most popular Python library for optimization, \texttt{scipy.optimize}\cite{scipy_optimize}, contains only minimization routines. Of course, the task of maximizing a function $f$ is the same as minimizing its negative $-f$. }---the goal is to find an $x$ such that $f(x)<f(x')$ for all $x' \ne x$, while evaluating $f$ as few times as possible. This chapter describes formally how the SMBO process addresses this challenge. I will define notation as it is introduced, though for reference I have included a reference table of variable names and definitions in Figure \ref{fig:notation} below.
 % Where does this important aside go?: It should be clear that, unless you have evaluated the black box function $f$ at every possible $x$, it is impossible to say with absolute certainty whether a given point is the global minimum. Thus, the goal of a statistical global optimization routine is to produce a candidate optimum $x$, with some measure of confidence that $x$ is in fact the global optimum.
 
 \begin{minipage}{\textwidth}
 \begin{framed}
 \begin{description}
   \item[$f$]: the objective function
-  \item[$k$]: the dimensionality of $f$'s domain space
+  \item[$k$]: the dimensionality of $f$'s domain
+  \item[$x$]: a generic point in $f$'s domain
   \item[$n$]: the number of sample points (points at which $f$ has been evaluated and $f(x)$ is known)
-  \item[$x_i$]: the $i$th sample point (a $k$-vector)
-  \item[$y_i$]$:= f(x_i)$; the known objective output at the $i$th sample point
-  \item[$\X$]: the vector of sample points ($n$ $k$-vectors, an $n\times k$ matrix)
+  \item[$x^i$]: the $i$th sample point (a $k$-vector)
+  \item[$\X$]: the vector of sample points whose $i$th element is $x^i$ ($n$ $k$-vectors, an $n\times k$ matrix)
+  \item[$y^i$]$:= f(x^i)$; the known objective output at the $i$th sample point (a real number)
   \item[$\Y$]: the vector of known outputs (an $n$-vector).
-  \item[$\hat{f}$]: the $k$-to-$1$-dimensional predictor function
-  \item[$\err$]: the predicted error of $\hat{f}$; also a $k$-to-$1$-dimensional function
-  \item[$y(x)$]$:=$Normal$(\hat{f}(x),\err(x))$; the random variable representing the predicted function distribution at x
+  \item[$\hat{f}(x)$]: the $k$-to-$1$-dimensional predictor function
+  \item[$\err(x)$]: the predicted (mean-squared) error of $\hat{f}(x)$; also a $k$-to-$1$-dimensional function
+  \item[$y(x)$]$:=$Normal$(\hat{f}(x),\err(x))$; a random variable with mean $\hat{f}(x)$ and standard deviation $\err(x)$, representing the prediction at $x$.
 \end{description}
+
 
 \end{framed}
 \captionof{figure}{Notation used throughout this thesis}
