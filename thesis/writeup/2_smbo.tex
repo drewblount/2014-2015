@@ -5,63 +5,59 @@ To formalize the notion of blackbox optimization, consider an expensive blackbox
 
 \begin{minipage}{\textwidth}
 \begin{framed}
-\begin{description}
+\begin{description}[leftmargin=!,labelwidth=\widthof{\bfseries thre}]
   \item[$f$]: the objective function
   \item[$k$]: the dimensionality of $f$'s domain
   \item[$x$]: a generic point in $f$'s domain
-  \item[$n$]: the number of sample points (points at which $f$ has been evaluated and $f(x)$ is known)
-  \item[$x^i$]: the $i$th sample point (a $k$-vector)
-  \item[$\X$]: the vector of sample points whose $i$th element is $x^i$ ($n$ $k$-vectors, an $n\times k$ matrix)
-  \item[$y^i$]$:= f(x^i)$; the known objective output at the $i$th sample point (a real number)
-  \item[$\Y$]: the vector of known outputs (an $n$-vector).
-  \item[$\hat{f}(x)$]: the $k$-to-$1$-dimensional predictor function
-  \item[$\err(x)$]: the predicted (mean-squared) error of $\hat{f}(x)$; also a $k$-to-$1$-dimensional function
-  \item[$y(x)$]$:=$Normal$(\hat{f}(x),\err(x))$; a random variable with mean $\hat{f}(x)$ and standard deviation $\err(x)$, representing the prediction at $x$.
+  \item[$x^i$]: the $i$th sample point(a $k$-vector)
+  \item[$n$]: the number of sample points
+  \item[$\X$]$=\{x^1,x^2,...,x^n\}$, the input vector
+  \item[$y^i$]$= f(x^i)$; the known objective output at the $i$th sample point (a real number)
+  \item[$\Y$]$=\{y^1,y^2,...,y^n\}$, the output vector
+  \item[$\hat{f}(x)$]: the predictor function
+  \item[$s^2(x)$]$=s(x)^2$, the estimated variance of the prediction $\hat{f}(x)$.  
+  \item[$y(x)$]: a random variable with expected value $\hat{f}(x)$ and variance $s^2(x)$, representing the prediction at $x$.
 \end{description}
 
 
 \end{framed}
-\captionof{figure}{Notation used throughout this thesis}
+\captionof{figure}{Reference table for SMBO notation}
 \label{fig:notation}
 \end{minipage}
 
 \section{The SMBO Loop}
 
-`SMBO' describes an entire class of algorithms, rather than one in particular \cite{hutter_sequential_2011, hamadi_autonomous_2012, jones_efficient_1998, rasmussen_gaussian_2006}. %note: get more specific with those cites. should be a handful of specific papers presenting particular SMBO things
+`SMBO' describes an entire class of algorithms, rather than one in particular \footnote{\cite{hutter_sequential_2011, hamadi_autonomous_2012, jones_efficient_1998, rasmussen_gaussian_2006}}. %note: get more specific with those cites. should be a handful of specific papers presenting particular SMBO things
 These algorithms differ along several dimensions: in their assumptions regarding determinism, the types of objective functions they can optimize, their modelling strategies, and the details of their interactive relationship to the objective functions being optimized, to name several. % clarification: such as some algorithms selecting one sample point, others more.
-Across these differences, the defining feature of sequential model-based optimization can be described as a three-part loop, shown below.
+Across these differences, the defining feature of sequential model-based optimization can be described as a three-part loop, shown below. I'll call this three-part process the \emph{SMBO loop} or \emph{cycle}; it will be referenced throughout this thesis. 
+
 
 \begin{minipage}{\textwidth}
 \begin{framed}
 
 \begin{enumerate} 
 \item The objective function $f$ is evaluated at a set of input values $\X$, producing observed outputs $\Y$.
-\item A prediction model of the objective function, the ``predictor function'' $\hat{f}$ is fit to the sample points $(\X,\Y)$, as well as a model of the expected error of $\hat{f}$, $\err$.
-\item From considering the prediction surface and its error, $(\hat{f},\err)$, new input points $\mb{x_{new}}$ are chosen to be evaluated by $f$. These points are chosen to most improve the ability of the model $\hat{f}$ to find the global optimum.\end{enumerate}
+\item A prediction model of the objective function, the ``predictor function'' $\hat{f}$ is fit to the sample points $(\X,\Y)$, as well as a model of the expected variance of $\hat{f}$, $\err$.
+\item From considering the prediction surface and its error, $(\hat{f},\err)$, $m$ new input points $x^{n+1},...,x^{n+m}$ are chosen to be evaluated by $f$. These points are chosen to most improve the ability of the model $(\hat{f},\err)$ to find the global optimum.\end{enumerate}
 \end{framed}
 
 \captionof{figure}{The three-stage SMBO loop}
 \label{fig:smbo_loop}
 \end{minipage}
-I'll call this three-part process the \emph{SMBO loop} or \emph{cycle}; it will be referenced throughout this thesis. 
 
-Note that at every iteration of the SMBO loop, (presuming we are minimizing $f$) there is a current `incumbent minimum', the best sample point evaluated so far. I will denote this point $x_{min}$, and its associated objective value $y_{min}$:
 
-\begin{align} \label{x_min}
-x_{min} &= x^j \mbox{ in $\X$ such that $y^j \leq y^i$ for all $y^i$ in $\Y$}\\
-y_{min} &= f(x_{min}).
-\end{align}
+Note that at every iteration of the SMBO loop, (presuming we are minimizing $f$) there is a current `incumbent minimum', the best sample point evaluated so far. I will denote this point $x_{min}$, and use $y_{min}$ to denote the current best output $f(x_{min})$.
 
-The SMBO loop returns $(x_{min},y_{min})$ once $y_{min}$ is satisfactory, which could be defined one of two obvious ways. If we are looking only for `good enough' performance in the blackbox function, then the halting criteria is once the incumbent $y_{min}$ drops below a set threshold, e.g., ``run the SMBO loop until you can find a blackbox value lower than $2$.'' Note that in general with a blackbox function, you can never be certain to have found the global optimum, unless you have sampled every point in the function's domain. Thus, the alternative to using a $y_{min}$ threshold as a halting criteria must be probabilistic---as will be described further in Section \ref{sec:max_imp}, from the prediction surface and its error function $(\hat{f},\err)$, we can rigorously predict the probability that the current $y_{min}$ is in fact the function's global minimum. Thus, it is straightforward to say, ``run the SMBO loop until you are 95\% confident that you have found the global minimum.''
+The SMBO loop returns $(x_{min},y_{min})$ once $y_{min}$ represents a satisfactory optimization result. As will be described further in Section \ref{sec:max_imp}, we can construct from the prediction model $(\hat{f},\err)$ a rigorous metric called `expected improvement', which lends to several reasonable stopping criteria, such as, ``return $y_{min}$ when you are 95\% confident that it is indeed the global minimum,'' or ``return $y_{min}$ when you are 95\% confident that it is within $\alpha$ of the global minimum.''
 
 \section{Visualizing the SMBO Loop}
 
-The cyclical nature of sequential model-based optimization suggests a popular illustration of the method, which highlights how the three steps reinforce each other to generate successively more predictive models---see Figure \ref{fig:smbo_cycle}, below. It is somewhat notable that illustrations quite similar to Fig. \ref{fig:smbo_cycle} appear throughout the literature related to SMBO \cite{hutter_sequential_2011,protolife_pdt_2013}. This image is perhaps the most popular conceptualization of the SMBO method.
+The cyclical nature of sequential model-based optimization suggests a popular illustration of the method, which highlights how the three steps reinforce each other to generate successively more predictive models---see Figure \ref{fig:smbo_cycle}, below. It is somewhat notable that illustrations quite similar to Fig. \ref{fig:smbo_cycle} appear throughout the literature related to SMBO, such as \cite{hutter_sequential_2011} and \cite{protolife_pdt_2013}. This image is perhaps the most popular conceptualization of the SMBO method.
 
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.75\textwidth]{images/smbo_loop}
-	\caption{A popular visualization of the SMBO process. The methodology of node iii is largely fixed across different SMBO algorithms, while the details of Node ii are generally the distinguishing factors between different SMBO algorithms.}
+	\caption{A popular visualization of SMBO as a three-part loop.}
 	\label{fig:smbo_cycle}
 
 \end{figure}
@@ -76,67 +72,76 @@ The cyclical nature of sequential model-based optimization suggests a popular il
 
 %Seeing each component as simply a function mapping a certain kind of input to a certain kind of output, combined with the circular relationship illustrated in Fig \ref{fig:smbo_cycle}, is what motivates me to describe the SMBO process as bootstrapping. From the perspective of node \textbf{I} in the cycle, the output of the objective function determines the next input of the objective function, which determines the next input, and do on. From the perspective of node \textbf{II}, each model induces the model that follows it.
 
-\section{SMBO$_{\text{III}}$: Maximum Improvement}\label{sec:max_imp}
+\section{SMBO Step III: Maximizing Improvement}\label{sec:max_imp}
 
-The third step in the SMBO loop is perhaps the most characteristic---different SMBO algorithms use different model functions to accomplish the task in node \textbf{II}, and of course each implementation might attempt to optimize a unique objective function in step \textbf{I}. The third step, however, has a standard solution that is relatively ubiquitous: maximizing a function of input space called \emph{expected improvement}. 
+The first step of the SMBO loop is defined by the optimization problem at hand. An interesting feature of SMBO is that a wide variety of modelling methods could be used in the second step of the loop; I will discuss the DACE method used by EGO in particular in the next chapter, and mention several others in Chapter \ref{ch:discussion}. There is a method used to perform third step, though, that is widespread enough, and interesting enough, to merit discussion here: choosing further sample points by maximizing a function of input space called \emph{expected improvement}. 
 
-There is a classical problem in optimization, of balancing the competing desires for exploration and exploitation \cite{john_holland}. Here, exploration refers to the impulse to sample in unknown regions of the objective function's domain, to learn more about its global behavior. Exploitation means the impulse to take advantage of what we already know, and sample where we predict we will find the global optimum. Expected improvement is one of those results from statistics that does a strikingly good job of quantifying a concept that seems at first to be too subtle to be easily quantified---it provides a satisfying solution to the exploration/exploitation conundrum.
+In global search problems such as optimization, it is commonly said that one needs to balance the competing search criteria of exploration and exploitation. Here, exploration refers to the impulse to investigate unknown regions of the objective function's domain, to learn more about its global behavior. Exploitation means the impulse to take advantage of what we already know, and sample where we currently predict that the global phenomenon's behavior is most desirable. At first, these seem like fairly opposite concepts, but expected improvement is one of those results from statistics that manages to quantify something you didn't think could be quantified. As we will see, choosing sample points to maximize the expected improvement of our model provides a very satisfying solution to the exploration/exploitation conundrum.
 
-Remember that during the SMBO process (as in many other optimization strategies), there is at all times a current ``incumbent optimum,'' $(x_{min},y_{min})$, which is the most optimal sample point evaluated so far. Simply put, the expected improvement of $x'$ measures amount by which we predict that $f(x')$ would be more optimal than $y_{min}$. More rigorously, improvement $I$ is defined as,
+Remember that during the SMBO process (as in many other optimization strategies), there is at all times a current ``incumbent minimum,'' $(x_{min},y_{min})$, which is the most optimal sample point evaluated so far. Simply put, the expected improvement of $x$ measures the amount by which we predict that the objective value at $x$ would be more optimal than $y_{min}$. Consider the random variable $y(x)$, which has expected value $\hat{f}(x)$ and variance $s(x)$. Improvement $I$ is then defined as,
 
 \begin{equation} \label{eq:improvement}
-I(x) = min(y_{min}-y(x),0),
+I(x) = max(y_{min}-y(x),0).
 \end{equation}
-where I have defined $y(x)=\text{Normal}(\hat{f}(x),\err(x))$; thus $I$ is a random variable. It should be clear to the reader that $I$ does capture the intuitive notion of expected improvement---it encodes our prediction of how much our current optimum $y_{min}$ would improve if we were to sample $f$ at $x$.
+$I$ is a random variable defined in terms of the random variable $y(x)$, so we can use standard statistical methods to derive its expected value $\mb{E}[I(x)]$ in terms of $\hat{f}(x)$ and $\err(x)$---this is how we define the expected improvement at $x$. Observe that finding the expected value of $I(x)$ encodes our prediction of how much our current optimum $y_{min}$ would improve if we were to sample $f$ at $x$.
 
 From this definition of improvement, all that is left is to apply the basic statistical notion of the expected value of a random variable to Eq. \ref{eq:improvement} to find the expected improvement function $\mb{E}[I(x)]$. Doing this, along with what \cite{jones_efficient_1998} calls `some tedious integration by parts,' produces the formula,
 
 \begin{equation} \label{eq:exp_improvement}
-\mb{E}[I(x)]=(y_{min}-\hat{f}(x))\times\Psi\left(\frac{y_{min}-\hat{f}(x)}{\err(x)}\right) + \err(x)\times\psi\left(\frac{y_{min}-\hat{f}(x)}{\err(x)}\right),
+\mb{E}\left [I(x)\right ]=(y_{min}-\hat{f}(x))\cdot\Phi\left(\frac{y_{min}-\hat{f}(x)}{s(x)}\right) + s(x)\cdot\phi\left(\frac{y_{min}-\hat{f}(x)}{s(x)}\right),
 \end{equation}
-where $\Psi$ and $\psi$ denote the standard normal distribution and density functions, familiar from statistics.
+where $\phi$ and $\Phi$ denote the standard normal p.d.f. and c.d.f., respectively.
 
-A significant feature of expected improvement is that it is monotonic in both $\err$ and $\hat{f}$. Ignoring $\hat{f}(x)$, if the prediction at $x$ is especially uncertain (measured by $\err(x)$), then the expected improvement at $x$ will be large---this incentivizes exploration. On the other hand, if we ignore predicted error, it is obvious that the points in input space where $\hat{f}(x)$ is lower will have a higher expected improvement (assuming the goal is minimization). This encodes the drive for exploitation. Thus, by choosing sample points to maximize the expected improve function, exploration and exploitation go hand in hand. This feature of SMBO is especially visible in the example I am about to present in Section \ref{sec:smbo_ex}.
+A significant feature of expected improvement is that it is monotonic in both $s$ and $\hat{f}$. Ignoring $\hat{f}(x)$, if the prediction at $x$ has a high variance, then the expected improvement at $x$ will be large---this incentivizes exploration, because prediction error is usually largest in regions farthest from existing sample points. On the other hand, if we ignore prediction error, it is obvious that the points in domain where $\hat{f}(x)$ is lower will have a higher expected improvement (assuming the goal is minimization). This encodes the drive for exploitation. Thus, by choosing sample points to maximize the expected improve function, exploration and exploitation go hand in hand, and we quantify an intuitive measure of how much our optimization project might benefit from sampling at $x$. This feature of SMBO is especially visible in the example I will present in Section \ref{sec:smbo_ex}.
 
 \section{The Loop's $0^{th}$ Step: The Initial Sample}\label{sec:lh}
 
-Obviously, it is impossible to construct a model of a blackbox function's response surface if you have not ever queried the function at all, so the SMBO loop cannot start itself without a strategy for picking an initial set of sample points. This is a somewhat technical detail, by which I mean it is not of particular theoretical interest to this thesis, so the more theoretically-inclined reader might choose to skip over this section and go right to the example presented in Section \ref{sec:smbo_ex}.
+Obviously, it is impossible to construct a model of a blackbox function's response surface if you have not ever queried the function at all, so the SMBO loop cannot start itself without a strategy for picking an initial set of sample points. This is a brief and technical detail, not of particular theoretical interest to this thesis; the more theoretically-inclined reader might choose to skip over this section to the example presented in Section \ref{sec:smbo_ex}.
 
-A popular strategy (find sources on wikipedia) for selecting these points, and the only strategy I will consider in this thesis, is called a latin hypercube sample. I will briefly describe it here, as it is a mathematically simple and interesting method.
+A popular strategy for selecting these points, and the only strategy I will consider in this thesis, is called a latin hypercube sample. To construct an $n$-point latin hypercube in $k$ dimensions, first divide each dimension's domain into $n$ rows, creating an $n^k$-cell grid of rectangular subdomains of $f$. The idea in latin hypercube sampling is that along any one dimension, there is exactly one sample in each row. Other than that, samples are chosen randomly. Sampling is then a two-step process: first, you randomly choose which $n$ of the $n^k$ cells will be occupied by samples under the latin hypercube constraint, and then locate each sample randomly from its assigned cell.
 
-To construct an $n$-point latin hypercube in $k$ dimensions, first divide each dimension's domain into $n$ rows. This induces a grid, subdividing the original $k$-rectangular domain into $n^k$ sub-rectangles. A latin hypercube sample takes points from this domain under the constraint that no row in any one dimension contains two sample points.
 
-That being said, the latin hypercube is one of those things that is more easily explained with pictures than words. [Put pictures here: is it cool to just life (and cite) the wikimedia commons pics from wikipedia?].
+Ignoring the position of samples within their cells, but considering only the distribution of which $n$ cells in the $n\times n \times...\times n$-cell grid are occupied, we find some interesting combinatorial properties, and analogies to two popular games. If you are a fan of sudoku, you have spent a lot of time thinking about this distribution: the arrangement  of any one numeral across the game board matches a nine-sample latin hypercube in two dimensions\footnote{Though not all $(9,2)$ latin hypercubes represent a legal distribution of one numeral on a sudoku board; the explanation of this is left as an exercise to the reader.}, as shown in Figure \ref{fig:sudoku}. In a similar vein, imagine a chess board with only eight rooks on it, each rook hostile towards all the others, arranged such that no two rooks are threatening each other. The set of $n$-point latin hypercubes in $k$-dimensions is basically identical to the set of non-threatening arrangements of $n$ mutually-hostile hyperrooks on the $n\times n \times...\times n$ ($k$ dimensional) chess board.
 
-If you are a fan of sudoku, you have spent a lot of time thinking about latin hypercubes: the distribution of any one numeral across the game board matches a nine-sample two-dimensional latin hypercube. [Little picture demonstrating this, perhaps in a row with the wikipedia latin squares]
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{images/sudoku2}
+\caption{The positions of one numeral on a complete sudoku board form a $9$-point latin square; e.g. the 3s above show a possible initial sampling of a 2D optimization domain. }
+\label{fig:sudoku}
+\end{figure}
 
 
 \section{A First Example}\label{sec:smbo_ex}
 
 To build the reader's intuition about the process of sequential model-based optimization, I will here present plots illustrating the minimization of a simple 1D toy problem using SMBO. These plots will show the EGO algorithm in particular, which I will present in detail in Chapter \ref{ch:ego}, but the features of interest are common to all SMBO processes. The plots were generated by my SMBO Python package, \texttt{smbo}, which is presented in Chapter \ref{ch:code}.
 
-For our toy problem, consider a 1D blackbox function $f$ over the domain $[0,10]$. In order to begin the SMBO process of optimizing this function, we must choose an initial set of sample points $\X$ at which to query $f$, to form the starting data set $(\X,\Y)$. The details of this selection are not of particular conceptual significance, and are discussed in Section \ref{sec:lh}. For now, assume we have selected 8 points roughly at random from throughout $f$'s domain, and evaluated $f$ at each one, thus gathering the initial data set $(\X,\Y)$ plotted below in Figure \ref{fig:samp_data}.
+For our toy problem, consider a 1D blackbox function $f$ over the domain $[0,10]$. In order to begin the SMBO process of optimizing this function, we must choose an initial set of sample points $\X$ at which to query $f$, to form the starting data set $(\X,\Y)$. The details of this selection are not of particular conceptual significance, and are discussed in Section \ref{sec:lh}. For now, assume we have selected 8 points roughly at random from throughout $f$'s domain, and evaluated $f$ at each one, thus gathering the initial data set $(\X,\Y)$ plotted below in Figure \ref{fig:first_step}(a).
 
-\begin{figure}[h]
+
+
+\begin{figure}[width=\textwidth]
 \centering
-\includegraphics[width=0.6\textwidth]{images/ego_ex/just_points}
-\caption{The initial sample $(\X,\Y)$ of our toy blackbox function $f$}
-\label{fig:samp_data}
+\begin{tabular}{lr}
+
+\subcaptionbox{The initial sample $(\X,\Y)$ of our toy blackbox function}
+{\includegraphics[width=0.45\textwidth]{images/ego_ex/just_points}}\label{fig:samp_data}
+ &
+
+\subcaptionbox{The EGO algorithm's predictive model $\hat{f}\pm \mb{s}(x)$ fit to our initial sample}
+{\includegraphics[width=0.45\textwidth]{images/ego_ex/just_pred}} \\
+\end{tabular}
+\caption{The first step of our sequential model-based optimizer\\}
+
+\label{fig:first_step}
 \end{figure}
 
 These data constitute the first step of the first round of SMBO---the objective function has been evaluated at the initial sample points. From looking at this first data set, we notice that generally, the inputs closer to the middle of the domain $[0,10]$ have lower function values. Recalling our assumption (consistent throughout this thesis) that the blackbox function $f$ is both deterministic, another striking feature we learn from the data is that there are at least three local minima: counting from the left (and starting at one), sample points 2, 5, and 7 all have lower $f$ values than their neighbors.
 
 
-Now, it is time for the second step of the loop, to fit a predictive model to the data. Regardless of the particular SMBO process being used, step two of the loop produces a predictor function and a measure of its expected error. Plotted below in Figure \ref{fig:first_model} are these two functions as they are set in the EGO algorithm, which is the SMBO process I will describe in-depth in the next chapter. Illustrating both the prediction surface and its standard error, the figure highlights the probabilistic nature of the prediction models used in the second step of the SMBO loop.
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.6\textwidth]{images/ego_ex/just_pred}
-\caption{The EGO algorithm's predictive model fit to our initial sample}
-\label{fig:first_model}
-\end{figure}
+Now, it is time for the second step of the loop, to fit a predictive model to the data. Regardless of the particular SMBO process being used, step two of the loop produces a predictor function and a measure of its expected error. Plotted in Figure \ref{fig:first_step}(b) are these two functions as they are set in the EGO algorithm, whose specifics I will describe in-depth in the next chapter. Illustrating both the prediction surface and its standard error, the figure highlights the probabilistic nature of the prediction models used in the second step of the SMBO loop.
 
-Figure \ref{fig:first_model} summarizes the first two steps of the SMBO loop: the gathering of objective data, and the fitting of a model function to that data. Note that the predictor error is zero at each sample point, because we know that $f$ is deterministic, and so we can predict $f(x^i)$ for each sample point $x^i$ with total certainty. Under the EGO model shown here, predicted error $\err(x)$ increases as a function of $x$'s distance from nearby sample points. This is visible as a sort of `error ballooning' of the prediction between the samples. Clearly, the prediction is most uncertain in those places in the domain $[0,10]$ that are farthest from the already-sample points.
+Figure \ref{fig:first_impv} summarizes the first two steps of the SMBO loop: the gathering of objective data, and the fitting of a model function to that data. Note that the predictor error is zero at each sample point, because we know that $f$ is deterministic, and so we can predict $f(x^i)$ for each sample point $x^i$ with total certainty. Under the EGO model shown here, predicted error $\err(x)$ increases as a function of $x$'s distance from nearby sample points. This is visible as a sort of `error ballooning' of the prediction between the samples. Clearly, the prediction is most uncertain in those places in the domain $[0,10]$ that are farthest from the already-sample points.
 
 
 Using the model produced in step two, we now choose the next sample point to evaluated by the blackbox function $f$, by maximizing the expected improvement function \footnote{Eq. \ref{eq:exp_improvement}} over the domain \footnote{as described in Section \ref{sec:max_imp}}. Building on the previous figures, the expected improvement function is overlaid in red in Figure \ref{fig:first_imp}. The vertical dashed line highlights the global maximum of this expected improvement function, which is chosen as the next sample point.
@@ -144,7 +149,7 @@ Using the model produced in step two, we now choose the next sample point to eva
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.6\textwidth]{images/ego_ex/0}
-\caption{The initial SMBO loop of our toy problem\\}
+\caption{A plot of the entire initial SMBO loop of our toy problem\\}
 \label{fig:first_imp}
 \begin{minipage}{\textwidth}
 
@@ -165,10 +170,10 @@ Having now built up an all-in-one SMBO loop plot piece by piece, I will show sim
 \begin{tabular}{lr}
 
 \subcaptionbox{}
-{\includegraphics[width=0.5\textwidth]{images/ego_ex/1}} &
+{\includegraphics[width=0.45\textwidth]{images/ego_ex/1}} &
 
 \subcaptionbox{}
-{\includegraphics[width=0.5\textwidth]{images/ego_ex/2}} \\
+{\includegraphics[width=0.45\textwidth]{images/ego_ex/2}} \\
 \end{tabular}
 \caption{The first and second SMBO loops of our toy problem. The first sample appears to be chosen to exploit; the second, to explore.\\}
 
@@ -192,10 +197,10 @@ Note that we have zoomed in on the vertical axis of the expected improvement plo
 \centering
 \begin{tabular}{lr}
 \subcaptionbox{}
-{\includegraphics[width=0.5\textwidth]{images/ego_ex/3}} &
+{\includegraphics[width=0.45\textwidth]{images/ego_ex/3}} &
 
 \subcaptionbox{}
-{\includegraphics[width=0.5\textwidth]{images/ego_ex/4}} \\
+{\includegraphics[width=0.45\textwidth]{images/ego_ex/4}} \\
 \end{tabular}
 \caption{The third and fourth iteration of the SMBO loop on the toy problem\\}
 \label{fig:explore_exploit}

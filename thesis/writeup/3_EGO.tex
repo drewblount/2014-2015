@@ -1,149 +1,164 @@
 \chapter{Case study: the EGO Algorithm}\label{ch:ego}
-I here present the EGO algorithm, which will be treated as the quintessential sequential model-based optimizer.
-Named for the paper in which it was presented, the informatively titled, ``Efficient Global Optimization of Expensive Blackbox Functions'' \cite{jones_efficient_1998}, EGO and it makes simple and intuitive assumptions about both the objective function and the best method to model it. Here, we will be concerned with the most basic case, where we are optimizing a deterministic, continuous, real-valued, $k$-to-1 dimensional objective function $f$.
-
-\section{The DACE Predictor}\label{sec:dace}
-The EGO algorithm uses a model known as the DACE predictor for the modelling component in the SMBO loop. Like EGO, the DACE acronym comes from a somewhat generically-titled paper, in this case, ``Design and Analysis of Computer Experiments'' \cite{sacks_design_1989}. This name is a reference to the DACE predictor's original application, which was the optimization of expensive computer simulations, in such applications as computer-assisted engineering of engine components at General Motors \cite{jones_efficient_1998}.
-
-First, we assume what is called a \emph{stochastic process model} [get cites/explanation from Jones p.456], i.e., that,
-\begin{equation} \label{eq:stoch_proc}
-y(\X^{(i)}) = \mu + \epsilon(\X^{(i)}) \ \ \ \ \ \text{for } i \in (1,2,...,n).
-\end{equation}
-As is common in statistics, $\mu$ represents the mean of the process. Note that the above equation appears simpler than even linear regression, as it has no functional component. The DACE model, and stochastic processes in general, instead contains its predictive power in the `error terms' $\epsilon(\X^{(i)})$. These terms are assumed to be distributed normally,
-
-\begin{equation} \label{eq:dace_err}
-\epsilon(\X^{(i)}) = \text{Normal}(0,\sigma^2)\ \ \ \ \ \text{for } i \in (1,2,...,n),
-\end{equation}
-for a process-wide $\sigma^2$. Despite the normal distribution, the $\epsilon(\X^{(i)})$ are very much \emph{not} independent of each other: it is in a complex error-correlation structure that the DACE model encodes the contours of its response surface. Specifically,
-
-\begin{equation} \label{eq:dace_corr}
-\text{Corr}\left(\epsilon(\X^{(i)}),\epsilon(\X^{(j)})\right)\ \  = \ \ 
-	\text{Exp}
-		\left [ 
-			-\sum_{h=1}^{k} 
-				\theta_h \left | \X^{(i)}_h - \X^{(j)}_h \right | ^{p_h}
-		\right ]\ \  = \ \ 
-	\prod_{h=1}^{k}
-		\text{Exp}
-			\left [
-				-\theta_h \left | \X^{(i)}_h - \X^{(j)}_h \right | ^{p_h}
-			\right ],
-\end{equation}
-where the free parameters $\{(\theta_i,p_i)$ for $i \in (1,2,...,k)$ determine the shape of the DACE predictor. Note that I have now presented all of the assumptions which define the DACE model, summarized in Figure \ref{fig:dace_ass}. The remaining discussion more or less follows mathematically from the assumptions laid out so far.
+This chapter presents EGO algorithm, which I treat as the quintessential sequential model-based optimizer.
+Named for the paper in which it was introduced, the informatively titled, ``Efficient Global Optimization of Expensive Blackbox Functions'' \cite{jones_efficient_1998}, EGO and it makes simple and intuitive assumptions about both the objective function and the best method to model it. Here, we will be concerned with the most basic case, where we are optimizing a deterministic, continuous, real-valued, $k$-to-1 dimensional objective function $f$. As in the previous chapter, I will define all variables as they are introduced, and also include a reference table in Figure \ref{fig:dace_ref}; we inherit all definitions from the broader SMBO discussion (Fig. \ref{fig:notation}).
 
 \begin{minipage}{\textwidth}
 \begin{framed}
-We assume that we are modeling a stochastic process $f$ with
+\begin{description}[leftmargin=!,labelwidth=\widthof{\bfseries threeeeee}]
+  \item[$\mu$]: the mean of the objective function
+  \item[$\sigma^2$]: the variance of the objective function
+  \item[$\varepsilon^i$]$=y^i-\mu$, the `error term' at sample $x^i$
+  \item[$\bm{\epsilon}$]$=\{\varepsilon^1,...,\varepsilon^n\}$, the error vector
+  \item[$\{(p_i,q_i)\}_{i=1}^k$]: the characteristic parameters defining the shape of the prediction surface
+  \item[$x$]: a generic point in $f$'s domain
+  \item[$x^i$]: the $i$th sample point(a $k$-vector)
+  \item[$n$]: the number of sample points
+  \item[$\X$]$=\{x^1,x^2,...,x^n\}$, the input vector
+  \item[$y^i$]$= f(x^i)$; the known objective output at the $i$th sample point (a real number)
+  \item[$\Y$]$=\{y^1,y^2,...,y^n\}$, the output vector
+  \item[$\hat{f}(x)$]: the predictor function
+  \item[$s^2(x)$]$=s(x)^2$, the estimated variance of the prediction $\hat{f}(x)$.  
+  \item[$y(x)$]: a random variable with expected value $\hat{f}(x)$ and variance $s^2(x)$, representing the prediction at $x$.
+\end{description}
+\end{framed}
+\captionof{figure}{Reference table for DACE notation}
+\label{fig:dace_ref}
+\end{minipage}
+
+
+\section{The DACE Predictor}\label{sec:dace}
+The EGO algorithm uses a model known as the DACE predictor for the modelling component in the SMBO loop. Like EGO, the DACE acronym comes from a somewhat generically-titled paper, in this case, ``Design and Analysis of Computer Experiments,'' \cite{sacks_design_1989}. This name is a reference to the DACE predictor's original application, which was the optimization of expensive computer simulations, in such applications as computer-assisted engineering of engine components at General Motors. \footnote{\cite{jones_efficient_1998}}
+
+The EGO algorithm assumes what is called the \emph{stochastic process model}, which means that we treat our observed outputs $\{y^1,...,y^n\}$ as though they were generated by the (stochastic) model,
+\begin{equation} \label{eq:stoch_proc}
+y^i = \mu + \eps^i,
+\end{equation}
+where $\mu$ is the mean of the stochastic process--a parameter of the model we are currently constructing, not something we know a priori--and $\eps^i$ is called the $i$th \emph{error term}. Obviously, $\eps^i$ is the difference between $\mu$ and $y^i$. The stochastic process model also assumes that the $\eps^i$ are normally distributed with expected value $0$ and variance $\sigma^2$--another parameter of our model, like $\mu$. Though they share a common mean and variance, the $\eps^i$ are very much \emph{not} independent of each other: it is in a complex error-correlation structure that the DACE model encodes the contours of its response surface. Specifically,
+
+\begin{equation} \label{eq:dace_corr}
+\text{Corr}(\eps^i,\eps^j)\ \  = \ \ 
+	\text{Exp}
+		\left ( 
+			-\sum_{h=1}^{k} 
+				q_h \left | \X^{(i)}_h - \X^{(j)}_h \right | ^{p_h}
+		\right )\ \  = \ \ 
+	\prod_{h=1}^{k}
+		\text{Exp}
+			\left (
+				-q_h \left | \X^{(i)}_h - \X^{(j)}_h \right | ^{p_h}
+			\right ),
+\end{equation}
+where the free parameters $\{(p_i,q_i)\}_{i=1}^k$ determine the shape of the DACE predictor surface. For this reason, I call these $2k$ values the \emph{characteristic parameters} of DACE; I will write $\Theta$ to denote all $2k$ of them.
+
+At this point, I have presented all of the assumptions which define the DACE model, summarized in Figure \ref{fig:dace_ass}. The remaining discussion more or less follows mathematically from what has been laid out so far.
+
+\begin{minipage}{\textwidth}
+\begin{framed}
+We assume that we are modeling a stochastic process with
 \begin{itemize}
 \item mean $\mu$,
 \item standard deviation $\sigma^2$,
-\item inter-sample correlation described by Eq. \ref{eq:dace_corr}, defined by parameters $\{p_i,\theta_i\}_{i=1}^k$ where $k$ is the dimensionality of $f$'s domain. 
+\item inter-sample error correlation described by Eq. \ref{eq:dace_corr} and the characteristic parameters $\Theta$.
 \end{itemize}
-
 
 \end{framed}
 \captionof{figure}{The assumptions the DACE model makes about the blackbox function $f$ being optimized}
 \label{fig:dace_ass}
 \end{minipage}
 
-%To describe how these assumptions are used to make a predictor function, consider the \emph{correlation matrix} $\mb{R}$, whose $(i,j)$th component is $\text{Corr}\left(\epsilon(\X^{(i)}),\epsilon(\X^{(j)})\right)$. The DACE predictor is built from $\mb{R}$,
+%To describe how these assumptions are used to make a predictor function, consider the \emph{correlation matrix} $\mb{R}$, whose $(i,j)$th component is $\text{Corr}\left(\bm{\epsilon}(\X^{(i)}),\bm{\epsilon}(\X^{(j)})\right)$. The DACE predictor is built from $\mb{R}$,
 
 %write
 %(Here I should discuss what error correlation means with some pretty pictures like in Jones p.459.)
 
-%Much more can (and should, and will) be said about the shape of the predictor implied by this correlation equation, but for now it suffices to say that it encodes the heuristic, ``points near each other in input-space should have nearby function values'', with a concept of nearness along each input dimension that is gaussian in shape, with magnitude and falloff-steepness determined by $\theta$ and $p$.
+%Much more can (and should, and will) be said about the shape of the predictor implied by this correlation equation, but for now it suffices to say that it encodes the heuristic, ``points near each other in input-space should have nearby function values'', with a concept of nearness along each input dimension that is gaussian in shape, with magnitude and falloff-steepness determined by $q$ and $p$.
 
 \subsection{Fitting the Model}\label{sec:max_lik}
-Another way of saying what's in Figure \ref{fig:DACE assumptions}, is that a particular DACE model is fully parameterized by $\mu, \sigma^2,$ and $\{(\theta_i,p_i)\}$. Given a particular model, then, and a set of observed data $(\mb{X},\mb{Y})$, we can ask what is the probability of observing the data given the model. I will formally derive this probability below, but for now it is important to note that a DACE model implies a probability distribution---a pattern we expect to see---in data about $f$. Given a model and some data, we can then ask how well the model and the data agree. As a simple example, imagine a DACE model with mean $\mu$ with a very small standard deviation $\sigma^2$. In this model, we would expect to see a dataset with $\mb{Y}$ values near $\mu$, and one with $\mb{Y}$ values drastically different from $\mu$ would be surprising. 
+Another way of saying what's in Figure \ref{fig:dace_ass}, is that a particular DACE model is fully parameterized by $\mu, \sigma^2,$ and $\Theta$. Given a particular model, then, and a set of observed data $(\X,\Y)$, we can ask what is the probability of observing the data given the model. I will formally derive this probability below, but for now it is important to note that a DACE model implies a probability distribution---a pattern we expect to see---in data about $f$. Given a model and some data, we can then ask how well the model and the data agree. As a simple example, imagine a DACE model with mean $\mu$ with a very small variancs $\sigma^2$. In this example, we would expect to see a dataset with $\Y$ values near $\mu$, and a data set with $\Y$ values drastically different from $\mu$ would seem unlikely. 
 
-Now imagine we have no DACE model, but a set of observed data $(\mb{X},\mb{Y})$. We use reasoning like that in the previous paragraph to find a DACE model, i.e. a set of parameters $(\mu,\sigma^2,\{p_i,\theta_i\}_{i=1}^k)$ which best describe the data. The goal is to find a model under which the observed data $(\mb{X},\mb{Y})$ are most probable. This idea is made rigorous with the notion of statistical \emph{likelihood}.
+Now imagine we have no DACE model, but a set of observed data $(\X,\Y)$. We use reasoning like that in the previous paragraph to find a DACE model, i.e. a set of parameters $(\mu,\sigma^2,\Theta)$ which best describe the data. The goal is to find a model under which $(\X,\Y)$ have the highest probability. This idea is made rigorous with the notion of statistical \emph{likelihood}.
 
-Likelihood, I'll remind the reader, is a statistical concept very similar to probability. % get a dank intro stats textbook here.
-Imagine a scenario where parameters $\psi$ give rise to some model $M_\psi$. Given some empirical observations $Z$, the concept of likelihood allows us to quantify how well the parameter choice $\psi$ and the generated model $M_\psi$ match our empirical observation---likelihood tests how well a model matches data. This is done quite simply: by defining the likelihood of a set of parameters given an observation, as the probability of that observation, given those parameters:
+Likelihood is a concept very similar to probability. % get a dank intro stats textbook here.
+Imagine a scenario where parameters $\psi$ give rise to some model $M_\psi$. Given some empirical observations $Z$, the concept of likelihood allows us to quantify how well the parameter choice $\psi$ and the generated model $M_\psi$ match our empirical observation---likelihood measures how well $M_\psi$ fits the data. This is done quite simply: by defining the likelihood $L$ of parameters $\psi$ given data $Z$, as the conditional probability density function of that observation, given those parameters:
 
 \begin{equation} \label{eq:def_likelihood}
-L(\psi|Z) = Pr(Z|\psi),
+L(\psi|Z) = p(Z|\psi),
 \end{equation}
-where $Pr(A|B)$ denotes `the probability of $A$, given $B$' in the traditional Bayesian sense.
+where $p(A|B)$ denotes the p.d.f. of $A$, given $B$.
 
 Note that this definition works well with our intuitive notion of probability: a set of parameters is a good one, i.e. it is likely, if the model that it generates is one wherein our observed data are relatively probable. The best model is that which is most likely, meaning that under no other model would the observed data $Z$ appear more probable.
 
 Here, our observed data is the vector of witnessed function values $\Y$, so finding an equation for the likelihood of our parameters is equivalent to deriving the joint probability distribution of this $n$-vector, given the assumptions in Fig. \ref{fig:dace_ass} and the sample points $\X$. I will now derive this joint distribution, using techniques that should be familiar to those schooled in college-level statistics. I'll first derive a simpler distribution, then use the change of variables formula to arrive at the result.
 
-Consider a set of independent, identically-distributed gaussian random variables $\mb{Z} = Z_1,...,Z_n$, with mean 0 and standard deviation $\sigma^2$. The probability density function of each $Z_i$, which I will write $p(Z_i)$, is then,
+Consider a set of independent, identically-distributed gaussian random variables $\mb{Z} = Z_1,...,Z_n$, each with mean 0 and standard deviation $\sigma^2$. The probability density function of each $z_i$,\footnote{I follow the convention of using uppercase letters, here $Z$, to denote random variables, and the same letter in lowercase to denote a particular sample from that distribution.} which I will write $p(z_i)$, is then,
 
 \begin{equation} \label{eq:f_{Z_i}}
-p(Z_i)=\frac{1}{\sigma\sqrt{2\pi}}e^{-Z_i^2/2\sigma^2}.
+p(z_i)=\frac{1}{\sigma\sqrt{2\pi}}e^{-z_i^2/2\sigma^2}.
 \end{equation}
-The joint probability distribution of $\mb{Z}$ is simply the product of each of its [independent] components:
+Now consider the vector of these independent random variables, $\mb{z}$. The joint probability distribution of $\mb{z}$ is simply the product of each of its components:
 
 \begin{align}  \label{eq:F_Z}
-p(\mb{Z}) &= \prod_{i=1}^n \frac{1}{\sigma\sqrt{2\pi}}e^{-Z_i^2/2\sigma^2}tf  \\
-			 &= \frac{1}{(2\pi\sigma^2)^{n/2}} {E}xp\left [ -\frac{1}{2\sigma^2}\sum_{i=1}^{n} Z_i^2\right ] \nonumber\\
-			 &= \frac{1}{(2\pi\sigma^2)^{n/2}} e^{-\mb{Z}^T\mb{Z}/2\sigma^2},\nonumber
+p(\mb{z}) &= \prod_{i=1}^n \frac{1}{\sigma\sqrt{2\pi}}\text{Exp}\left [-z_i^2/2\sigma^2\right ]  \\
+			 &= \frac{1}{(2\pi\sigma^2)^{n/2}} \text{Exp}\left [ -\frac{1}{2\sigma^2}\sum_{i=1}^{n} z_i^2\right ] \nonumber\\
+			 &= \frac{1}{(2\pi\sigma^2)^{n/2}} \text{Exp}\left [ -\mb{z}^T\mb{z}/2\sigma^2\right ],\nonumber
 \end{align}
-where the last line uses vector multiplication to denote the sum of the square components of $\mb{Z}$.
+where the last line uses vector multiplication to denote the sum of the squared components of $\mb{z}$.
 
-Now, we use the change of variables formula to derive from this an equation for our actual data. For convenience, I'll consider the probability distribution of the vector of error terms, $\mb{\epsilon}$, rather than simply the output vector $\mb{y}$. If $\mb{1}$ denotes the 1-vector, then,
-
-\begin{equation}\label{eq:epsilon}
-\epsilon = \mb{y} - \mb{1}\mu.
-\end{equation}
-I will also consider $\mb{R}$, the \emph{correlation matrix} of the errors $\epsilon$. $\mb{R}$ is simply the $n\times n$ matrix whose $(i,j)^{th}$ entry is, 
+Now, I will use the change of variables formula to derive DACE's probability distribution function from Eq \ref{}. Let $\mb{R}$ be the \emph{correlation matrix} of the errors $\eps^i$: the $n\times n$ matrix whose $(i,j)^{th}$ entry is the correlation between the $i$ and $j$th errors, as defined by Eq. \ref{eq:dace_corr}.
 
 \begin{equation}\label{eq:R}
-\mb{R}_{i,j}=Corr[\epsilon_i,\epsilon_j]
+\mb{R}_{i,j}=\text{Corr}(\eps^i,\eps^j)
 \end{equation}
-Where $Corr$ is the DACE error-correlation function defined in Eq \ref{eq:dace_corr}. By construction, we know that $\mb{R}$ is symmetric and positive-definite, which means that a Cholesky decomposition exists CITE\cite{linear_algebra}, i.e., that there exists a lower-triangular matrix $A$ such that,
+By construction, we know that $\mb{R}$ is symmetric and positive-definite, meaning that a Cholesky decomposition exists\cite{linear_algebra}, i.e., there exists a lower-triangular matrix $\mb{A}$ such that,
 
 \begin{equation} \label{eq:cholesky}
-\mb{R} = A A^T.
+\mb{R} = \mb{A} \mb{A}^T.
 \end{equation}
 
-Now, because of [WHY? is it the lower-triangularity of $A$? I don't see how we know that the difference between $\epsilon$ and iid is the matrix A], we know that,
+
+% Now, because \bm{\epsilon} is normal (0,\sigma^2), just like z, but with correlation, we can write
+Now note that each element of both $\bm{\epsilon}$ and $\mb{z}$ is normally distributed with mean 0 and variance $\sigma^2$, though the $z^i$ are mutually independent while the $\eps^i$ are intercorrelated.], we know that, with $\mb{z}$ as defined above,
 \begin{equation} \label{Y_sub}
-\epsilon=A\mb{Z},
+\bm{\epsilon}=\mb{A}\mb{z},
 \end{equation}
-where $\mb{Z}$ is and independent, identically distributed vector with each component Normal$(0,\sigma^2)$. We will use this fact, along with the change of variables formula and the above-derived probability density function for such a $\mb{Z}$ (Eq \ref{eq:F_Z}), to arrive at the likelihood equation. Letting $g$ denote the linear transformation equivalent to left-multiplication by the matrix A, we see that,
+We will use this fact, along with the change of variables formula and the above-derived p.d.f. of $\mb{z}$ (Eq \ref{eq:F_Z}), to arrive at the likelihood equation. Letting $g$ denote the linear transformation equivalent to left-multiplication by the matrix $\mb{A}$, we see that,
 
 \begin{align}
-\epsilon &= g(\mb{Z}) \nonumber \\
-\mb{Z} &= g^{-1}(\epsilon) = A^{-1}\epsilon
+\bm{\epsilon} &= g(\mb{z}) \nonumber \\
+\mb{z} &= g^{-1}(\bm{\epsilon}) = \mb{A}^{-1}\bm{\epsilon}.
 \label{eq:sub}
 \end{align}
 
-
-
 Now recall the change of variables formula, which given Eq. \ref{eq:sub} states that,
 \begin{align} \label{eq:change_of_vars}
-p(\epsilon) &= p(\mb{Z})\left (g^{-1}(\mb{Z})\right)\times \left | g^{-1}(\mb{Z}) \right | \\
-			 &= p(\mb{Z})\left (A^{-1}\epsilon\right) |A^{-1}| \\ 
-			 &= p(\mb{Z})\left (A^{-1}\epsilon\right) \frac{1}{|A|}
+p(\bm{\epsilon}) &= p(\mb{z})\left (g^{-1}(\mb{z})\right)\times \left | g^{-1}(\mb{z}) \right | \\
+			 &= p(\mb{z})\left (\mb{A}^{-1}\bm{\epsilon}\right) |\mb{A}^{-1}| \\ 
+			 &= p(\mb{z})\left (\mb{A}^{-1}\bm{\epsilon}\right) \frac{1}{|\mb{A}|}
 \end{align}
 
-Now plugging in Eq. \ref{eq:F_Z}, the formula for $p(\mb{Z})$, 
+Plugging in the formula for $p(\mb{z})$ (Eq. \ref{eq:F_Z}), 
 
 \begin{align} \label{eq:getting_F_Y}
-p(\epsilon) &= \frac{1}{(2\pi\sigma^2)^{n/2}|A|} {E}xp\left [ -\frac{1}{2\sigma^2}(A^{-1}\epsilon)^T(A^{-1}\epsilon)\right ].
+p(\bm{\epsilon}) &= \frac{1}{(2\pi\sigma^2)^{n/2}|\mb{A}|} \text{Exp}\left [ -\frac{1}{2\sigma^2}(\mb{A}^{-1}\bm{\epsilon})^T(\mb{A}^{-1}\bm{\epsilon})\right ].
 \end{align}
 
-Notice that the following equalities hold, simplifying the rightmost terms above:
+Notice that the following equalities hold, simplifying the exponent above:
 
 \begin{align}
-(A^{-1}\epsilon)^T(A^{-1}\epsilon) &= \epsilon^T(A^{-1})^TA^{-1}\epsilon \nonumber\\
-			 						 &= \epsilon^T((A^T)^{-1}A^{-1})\epsilon\nonumber\\
-									 &= \epsilon^T(AA^T)^{-1}\epsilon\nonumber\\
-									 &= \epsilon^T\mb{R}^{-1}\epsilon
+(\mb{A}^{-1}\bm{\epsilon})^T(\mb{A}^{-1}\bm{\epsilon}) &= \bm{\epsilon}^T(\mb{A}^{-1})^T\mb{A}^{-1}\bm{\epsilon} \nonumber\\
+			 						 &= \bm{\epsilon}^T((\mb{A}^T)^{-1}\mb{A}^{-1})\bm{\epsilon}\nonumber\\
+									 &= \bm{\epsilon}^T(\mb{A}\mb{A}^T)^{-1}\bm{\epsilon}\nonumber\\
+									 &= \bm{\epsilon}^T\mb{R}^{-1}\bm{\epsilon}
 									 \label{eq:inverse}
 \end{align}
-By Eq. \ref{eq:cholesky} and the fact that the determinant of a product is the product of the determinants, we know that  $|A|=|\mb{R}|^{1/2}$. Thus we get that,
+Because the determinant of a product is the product of the determinants, we know that  $|\mb{A}|=|\mb{R}|^{1/2}$. Substituting this and \ref{eq:inverse} into \ref{eq:getting_F_Y}
 
 \begin{equation} \label{eq:likelihood1}
-\frac{1}
+L(\{\Theta, \mu, \sigma^2\}|\bm{\epsilon}) = p(\bm{\epsilon})=\frac{1}
   {(2\pi\sigma^2)^{n/2}|\mb{R}|^{1/2}}\ 
-Exp \left 
+\text{Exp} \left 
   [ -\frac
-    {\epsilon^T\mb{R}^{-1}\epsilon}
+    {\bm{\epsilon}^T\mb{R}^{-1}\bm{\epsilon}}
     {2\sigma^2} 
 \right ],
 \end{equation}
@@ -152,14 +167,14 @@ which was written by Jones et al as,
 \begin{equation} \label{eq:likelihood}
 \frac{1}
   {(2\pi\sigma^2)^{n/2}|\mb{R}|^{1/2}}\ 
-Exp \left 
+\text{Exp} \left 
   [ -\frac
     {(\mb{y}-\mb{1}\mu)^T\mb{R}^{-1}(\mb{y}-\mb{1}\mu)}
     {2\sigma^2} 
 \right ].
 \end{equation}
 
-Let the $\theta_i$ and $p_i$ be fixed. Then \ref{eq:likelihood} can be maximized at $\mu = \hat{\mu}$ and $\sigma^2 = \hat{\sigma}^2$ given by,
+Now let the characteristic parameters $\Theta$ be fixed. Then \ref{eq:likelihood} can be maximized at $\mu = \hat{\mu}$ and $\sigma^2 = \hat{\sigma}^2$ given by,
 \begin{equation} \label{eq:mu_hat}
 \hat{\mu}=\frac
 	{\mb{1}^T\mb{R}^{-1}\mb{y}}
@@ -170,41 +185,41 @@ and,
 \begin{equation} \label{eq:sig_hat}
 \hat{\sigma}^2
     = \frac{(\mb{y}-\mb{1}\hat{\mu})^T\mb{R}^{-1}(\mb{y}-\mb{1}\hat{\mu})}{n} 
-	= \frac{\epsilon^T\mb{R}^{-1}\epsilon}{n}
+	= \frac{\bm{\epsilon}^T\mb{R}^{-1}\bm{\epsilon}}{n}
 \end{equation}
-\citep{jones_efficient_1998}. Note that when $\mb{R}=\mb{I}$ (the identity matrix), there is no correlation between each variable. As you would hope, in this case Eq. \ref{eq:mu_hat} and Eq. \ref{eq:sig_hat} reduce to the standard statistical definitions of mean and standard deviation.
+\citep{jones_efficient_1998}. As a quick sanity check, consider the case where there is no correlation between each variable $\eps^i$. In this case, the correlation matrix $\mb{R}$ is simply the identity matrix, and Eq. \ref{eq:mu_hat} and Eq. \ref{eq:sig_hat} reduce to the standard statistical definitions of mean and variance.
 
-By substituting Eq. \ref{eq:mu_hat} and Eq. \ref{eq:sig_hat} into the likelihood equation (Eq \ref{eq:likelihood}), we get the concentrated likelihood equation,:
+Substituting \ref{eq:mu_hat} and \ref{eq:sig_hat} into \ref{eq:likelihood1}, we get the \emph{concentrated likelihood function}:
 
 \begin{equation} \label{eq:conc_likelihood}
-\frac{e^{n/2}}
-  {(2\pi\hat{\sigma}^2)^{n/2}|\mb{R}|^{1/2}}.
+\sqrt{\frac{e^{n}}
+  {(2\pi\hat{\sigma}^2)^{n}|\mb{R}|}}
 \end{equation}
-We then fit a DACE model by setting $p$ and $\theta$ to maximize this concentrated likelihood equation; note that $p$ and $\theta$ determine the matrix $\mb{R}$ this maximization is done numerically and my own methods of doing so are discussed in Section \ref{sec:sub_opt}. By fitting the DACE model to data $(\X,\Y)$ in this way, we find the model under which the data is most probable.
+Note that \ref{eq:conc_likelihood} is dependent on $\Theta$, $\X$, and $\Y$ through the variables $\hat{\sigma}$ and $\mb{R}$. We then fit a DACE model to $(\X,\Y)$ by setting the characteristic parameters $\Theta$ to maximize concentrated likelihood. This maximization is done numerically, and my own methods of doing so are discussed in Section \ref{sec:sub_opt}. 
 
 \section{The DACE predictor function}
-Having fit a model $(\hat{\mu},\ \hat{\sigma}^2,\ \{(\theta_i,\ p_i)\}_{i=1}^n\ )$ by maximizing likelihood, we construct an actual predictor function $\hat{f}$ that maps points in $f$'s domain to expected output values, and the error function $\err$, which maps points $x$ in $f$'s domain to the expected error of the prediction $\hat{f}(x)$. This is done by finding the function meeting a criterion known as the (provably) \emph{best linear unbiased predictor}. The intuitive idea is that we have already seen data $(\X,\Y)$, so we know the value of $f$ at every point in $\X$. $\hat{f}$ will always agree with $f$ at these sample points, with absolute certainty. That is to say,
+Having fit a DACE model $(\hat{\mu},\ \hat{\sigma}^2,\Theta)$ by maximizing likelihood, we are finally able to formulate the DACE predictor function $\hat{f}(x)$ and its variance $\err(x)$. This is done by finding the function meeting a criterion known as the (provably) \emph{best linear unbiased predictor}. The intuitive idea is that we have already seen data $(\X,\Y)$, so we know the value of $f$ at every point in $\X$. $\hat{f}$ will always agree with $f$ at these sample points, with absolute certainty. That is to say,
 
 \begin{align}
 \hat{f}(x^i)&=y^i\\
 \err(x^i)&=0\ \ \ \ \ \mbox{ for all $x^i$ in $\X$}
 \end{align}
-We also assume that any unseen data will be consistent with the error-correlation structure implied by Eq. \ref{eq:dace_corr} and the parameters $\{(\theta_i,p_i)\}_{i=1}^n$. To formalize this idea, consider a new point $x'$ in $f$'s domain. Let $\mb{r}$ be \emph{correlation vector} of length $n$ (the number of sample points in $\X$), whose $i$th element is,
+Consistent with the stochastic process model, we assume that any unseen data will be adhere to the error-correlation structure defined by Eq. \ref{eq:dace_corr} and the characteristic parameters $\Theta$. To formalize this idea, consider a point $x$ in $f$'s domain. Let $\mb{r}$ be the \emph{correlation vector} of length $n$ (the length of $\X$), whose $i$th element is,
 
 \begin{equation}\label{eq:r}
-\mb{r}_i = Corr\left( \epsilon(x'),\epsilon(x^i))\right).
+\mb{r}_i = \text{Corr}\left( {\eps}(x),\bm{\eps}(x^i))\right).
 \end{equation}
-For a given $x'$, $\mb{r}$ effectively encodes the expected correlations between $\hat{f}(x')$ and the already-observed function values $\mb{y}$. Now recall the correlation matrix $\mb{R}$ (Eq. \ref{eq:R}), which describes the inter-correlation between the data we have seen so far, and the vector of observed errors $\mb{\epsilon} = \Y - \mb{1}\hat{\mu}$, where $\mb{1}$ denotes the $n$-vector of ones. In these terms, the best linear unbiased predictor of $f$ is then,
+Because of the direct relationship between $\bm{\epsilon}$ and $\Y$ (Eq. \ref{eq:stoch_proc}), $\mb{r}$ encodes the expected correlations between $f(x)$ and each of the already-observed $f$ values, $\mb{y}$. Now recall the correlation matrix $\mb{R}$, and the vector of observed errors $\bm{\epsilon} = \Y - \mb{1}\hat{\mu}$, where $\mb{1}$ denotes the $n$-vector of ones. In these terms, the best linear unbiased predictor of $f$ is,
 
 \begin{equation}\label{eq:blup}
-\hat{f}(x')=\hat{\mu} + \mb{r}^T\mb{R}^{-1}\mb{\epsilon}.
+\hat{f}(x)=\hat{\mu} + \mb{r}^T\mb{R}^{-1}\mb{\bm{\epsilon}}
 \end{equation}
 
-We can also estimate the mean-squared error of $f$, $\err$, by considering the fact that there is no prediction error on points we have already sampled, relatively little error in the points nearby them, and relatively more error (tending towards $\hat{\sigma}^2$ as defined in Eq. \ref{eq:sig_hat}) in unknown regions of $f$'s domain. This intuition is captured by the formula for $\err$,
+We can also estimate the expected variance of our prediction $\hat{f}(x)$, $\err$, by considering the fact that there is no prediction error on points we have already sampled, relatively little error in the points nearby them, and relatively more error (tending towards $\hat{\sigma}^2$) in unknown regions of $f$'s domain. These properties are captured by the formula for the best linear unbiased predictor's variance,
 
 \begin{equation}\label{eq:err}
-\err(x') = \hat{\sigma}^2 \left(1 - \mb{r}^T\mb{R}^{-1}\mb{r} + \frac{(1 - \mb{1}^T\mb{R}^{-1}\mb{r})^2}{\mb{1}^T\mb{R}^{-1}\mb{r}} \right).
+\err(x) = \hat{\sigma}^2 \cdot \left(1 - \mb{r}^T\mb{R}^{-1}\mb{r} + \frac{(1 - \mb{1}^T\mb{R}^{-1}\mb{r})^2}{\mb{1}^T\mb{R}^{-1}\mb{r}} \right)
 \end{equation}
-Like the original authors of EGO, I will defer the rather lengthy proof that this is indeed the best linear unbiased predictor to the authors of DACE \cite{jones_efficient_1998,sacks_design_1989}.
+Like the original authors of EGO, I will defer the rather lengthy proof that \ref{eq:blup} and \ref{eq:err} indeed constitute the best linear unbiased predictor of $f$, to the authors of DACE \citep{sacks_design_1989}.
 
-In summary, the DACE model works by first fitting the parameters $\{(\theta_i,\ p_i)\}_{i=1}^n$ to the $n$ data points $(\X,\Y)$. From $\{(\theta_i,\ p_i)\}_{i=1}^n$, the estimations $\hat{\mu}$ and $\hat{\sigma}^2$ are used to construct the predictor function and its error, Eqs. \ref{eq:blup,eq:err}. This process, by which $\X$ and $\Y$ are used to predict the predictor function and its error, $\hat{f},\err$, constitutes the second stage of the SMBO loop (Fig. \ref{fig:smbo_loop}). The EGO algorithm is now fully defined; it is the SMBO process that uses the DACE predictor model.
+In summary, the DACE model works by first fitting the characteristic parameters $\Theta=\{(q_i,\ p_i)\}_{i=1}^n$ to the $n$ data points $(\X,\Y)$, by maximizing the likelihood of the sample. We then use $\Theta$ to construct the predictor function and its expected variance, $\hat{f}$ and $\err$. This process, which maps data $(\X,\Y)$ to a model $(\hat{f},\err)$, constitutes the second step of the SMBO loop. The EGO algorithm is now fully defined; it is simply the SMBO process that uses the DACE predictor model.

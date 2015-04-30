@@ -219,8 +219,8 @@ class dace:
         z0 = self.P + self.Q
         
         minimizer_kwargs = {"method": "COBYLA"}
-        res = basinhopping(special_neg_conc, z0, minimizer_kwargs=minimizer_kwargs,niter=50,T=0.1)        
-        #res = minimize(neg_conc, z0, method='L-BFGS-B',bounds=bounds)
+        #res = basinhopping(special_neg_conc, z0, minimizer_kwargs=minimizer_kwargs,niter=150,T=0.1)        
+        res = minimize(neg_conc, z0, method='L-BFGS-B',bounds=bounds)
         #res = minimize(neg_conc, z0, method='SLSQP',bounds=bounds)
         
         print('took ' + str(res.nfev) + ' evaluations of likelihood function to set P and Q.')

@@ -27,7 +27,7 @@ class smb_optimizer:
         the global optimum of the objective by the generation of sequential models.
     """
     
-    def __init__(self, domain, objective_func, modeller, init_sampler=None, res=0.05, brute_optimize_EI=False,logger=None):
+    def __init__(self, domain, objective_func, modeller, init_sampler=None, res=0.1, brute_optimize_EI=False,logger=None):
         """
         Args:
             domain (list): a :math:`k`-list of tuples describing the lower and upper bounds of each input dimension.
@@ -105,10 +105,12 @@ class smb_optimizer:
         Stores predicted function error values for each point on the plot_point grid
         """
         scale=1
-        buff = [scale*sqrt(self.pred_err(point)) for point in self.domain_buffer]
         if self.logger:
+            buff = [scale*self.pred_err(point) for point in self.domain_buffer]
             self.logger.info('error buffer: '+str(buff))
-        return buff
+            return buff
+        else: return [scale*self.pred_err(point) for point in self.domain_buffer]
+        
         
     @lazyprop
     def domain_buffer(self):
@@ -232,7 +234,7 @@ class smb_optimizer:
         if type(plot_dims)==int:
             return self.plot1d
     
-    def take_samples(self, stopping_improvement=0.01, max_iters=100, plot_dims=None, fname='plots/',verbose=True,leg_ids=[0]):
+    def take_samples(self, stopping_improvement=0.01, max_iters=100, plot_dims=None, fname='plots/',verbose=True):
         """
         Args:
             stopping_improvement(float): the iterative process terminates if the maximum expected improvement nowhere is larger than this value
@@ -240,12 +242,11 @@ class smb_optimizer:
             plot_dims (int) or (list): the one, or two dimensions along which plots should be saved.
             fname (string): the prefix of the filename of each file to be saved
             randomize (bool): disabled; being passed along
-            leg_ids (list(int)): the loop numbers of plots that should include legends
         Iteratively chooses a sample point, evaluates the objective function, and refits the model
         """
         # generate inital plots
         if (type(plot_dims)==int):
-            self.plot1d(fname=fname+'0.pdf',plot_objective=True,plot_improvement=True)
+            self.plot1d(fname=fname+'0.pdf',plot_objective=True,legend=True)
         for i in range(max_iters):
             if verbose: 
                 print('best place to sample: '+str(self.next_sample))
@@ -256,7 +257,7 @@ class smb_optimizer:
             # 1d plot
             if (type(plot_dims)==int):
                 # plot legend only on first plot
-                self.plot1d(fname=fname+str(i+1)+'.pdf',plot_objective=True,plot_improvement=True,legend= ((i+1) in leg_ids))
+                self.plot1d(fname=fname+str(i+1)+'.pdf',plot_objective=True)
             # 2d plot
             elif (len(plot_dims)==2):
                 self.plot2d(fname='2d_'+fname+str(i+1)+'.pdf')
@@ -316,34 +317,25 @@ class smb_optimizer:
         x_min=self.domain[dim][0]
         x_max=self.domain[dim][1]
         
-        #plt.rc('text', usetex=True)
-        #plt.rc('font', family='serif')
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif')
         
         
         
         font = {'fontname':'Palatino'}
         
         fig, ax = plt.subplots()
-        #plt.subplots_adjust(left=0.25, bottom=0.25)
-        plt.xlabel('x')
-        ax.set_ylabel('predicted y(x)')
-        plt.title('Predictor Surface with '+str(self.n)+' samples')
+        plt.subplots_adjust(left=0.25, bottom=0.25)
+        plt.xlabel(r'x')
+        ax.set_ylabel(r'predicted y(x)')
+        plt.title(r'Predictor Surface with '+str(self.n)+' samples')
         pred_range = np.arange(x_min, x_max, self.res)
-        
-        if plot_objective:
-            obj = [ self.objective_func([x]) for x in pred_range ]
-            exp_imp_line, = ax.plot( pred_range, obj, 'k--', linewidth=2, label= 'objective func' )
-        
-        # plot the actual sample points
-        points = ax.plot([x[dim] for x in self.X],self.Y, 'ko',label='sample points')
-        
-        
         preds  = self.prediction_buffer
         # errors are illustrated with 2 times sigma (two standard devs)
         
         
         # plot the predictor and +/- errors
-        pred_line,  = ax.plot(pred_range, preds, label='predictor surface')
+        pred_line,  = ax.plot(pred_range, preds, label=r'predictor surface')
         
         
         
@@ -355,7 +347,7 @@ class smb_optimizer:
             pl_errors = map(add, preds, errors)
             mi_errors = map(sub, preds, errors)
             ax.fill_between(pred_range, pl_errors, mi_errors, facecolor="lightgreen")
-            p_err_line, = ax.plot(pred_range, pl_errors, color="green", label= 'plus/minus error')
+            p_err_line, = ax.plot(pred_range, pl_errors, color="green", label= r'plus/minus error')
             m_err_line, = ax.plot(pred_range, mi_errors, color="green")
             y_min=np.amin(preds)-np.amax(errors)
             y_max=np.amax(preds)+np.amax(errors)
@@ -365,6 +357,9 @@ class smb_optimizer:
         #plt.axis([self.domain[0][0], self.domain[0][1], -3, 12])
         
         
+        if plot_objective:
+            obj = [ self.objective_func([x]) for x in pred_range ]
+            exp_imp_line, = ax.plot( pred_range, obj, 'k--', linewidth=2, label= r'objective func' )
                 
         
         
@@ -378,36 +373,32 @@ class smb_optimizer:
         # plot the expected improvement
         if plot_improvement:
             ax2 = ax.twinx()
-            ax2.axis([x_min, x_max, 0, 1])
             imps = [ self.exp_improvement([x]) for x in pred_range ]
             # if you're plotting, might as well use that info for maximization
-            exp_imp_line, = ax2.plot(pred_range, imps, color='r',label= 'expected improvement')
-            ax2.set_ylabel( 'expected improvement', color='r')
+            exp_imp_line, = ax2.plot(pred_range, imps, color='r',label= r'expected improvement')
+            ax2.set_ylabel( r'expected improvement', color='r')
             for tl in ax2.get_yticklabels():
                 tl.set_color('r')
-            
-            if plot_next_sp:
-                # plot a vertical dotted line at the next sample point
-                point = ax2.axvline(self.next_sample, color='k', linestyle='dotted', label= 'next sample')
-            
+            ax2.axis([x_min, x_max, 0, 1.5])
             
             # combining labels from both axes
             lh2,ll2 = ax2.get_legend_handles_labels()
             leg_hand += lh2
-            leg_lab  += ll2
-            
-                  
-            ax2.tick_params(axis="y", labelcolor="r")   
-            
-            
+            leg_lab  += ll2            
+                
+        # plot a vertical dotted line at the next sample point
+        if plot_next_sp:
+            point = ax.axvline(self.next_sample, color='k', linestyle='dotted',label= r'next sample')
         
                 
+        # plot the actual sample points
+        points = ax.plot([x[dim] for x in self.X],self.Y, 'ko',label=r'sample points')
         
         
         
     
         if legend:   
-            plt.legend(leg_hand,leg_lab,numpoints=1,fontsize=10)
+            plt.legend(leg_hand,leg_lab,loc=9,numpoints=1,fontsize=10)
         
          
         if fname:

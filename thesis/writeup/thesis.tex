@@ -1,7 +1,7 @@
 
-\documentclass[letterpaper]{report}
+\documentclass[letterpaper]{reedthesis}
 \usepackage{mysphinx}
-\pagestyle{normal}
+%\pagestyle{normal}
 \usepackage{natbib, graphicx}
 \graphicspath{ {images/} }
 
@@ -13,7 +13,6 @@
 \newcommand{\err}{s^2}
 
 
-%\usepackage{natbib,alifeconf}
 \usepackage{amsmath}
 \usepackage[top=1.5in, bottom=1.5in, left=1.25in, right=1.25in]{geometry}
 
@@ -27,6 +26,11 @@
 \usepackage{pxfonts}
 \usepackage{caption}
 \usepackage{subcaption}
+
+\usepackage{calc}  
+\usepackage{enumitem}  
+
+\usepackage{bm}
 
 \usepackage{framed}
 \setlength{\fboxsep}{10pt}
@@ -42,7 +46,7 @@
 
 %% Macros
 \newcommand{\mb}{\mathbf}
-
+\newcommand{\eps}{\varepsilon}
 
 \DeclareSymbolFont{bbold}{U}{bbold}{m}{n}
 \DeclareSymbolFontAlphabet{\mathbbold}{bbold}
@@ -51,12 +55,18 @@
 
 
 
-\title{Sequential Model-Based Optimization\\ {\small \textit{-- of --}} \\Expensive Blackbox Functions}
-\author{Drew Blount \\
-\mbox{}\\
-Mathematics Department, Reed College\\
-\\
-dblount@reed.edu}
+\title{Sequential Model-Based Optimization of Expensive Blackbox Functions
+	 \\{\small \textit{-- or --}}
+	 \\\textit{How to Do Well When You Don't Know What You're Doing}}
+
+\author{Drew Blount}
+
+\division{Mathematics and Natural Sciences}
+\advisor{James Fix}
+%If you have two advisors for some reason, you can use the following
+%\altadvisor{Your Other Advisor}
+%%% Remember to use the correct department!
+\department{Mathematics}
 
 \begin{document}
 \maketitle
